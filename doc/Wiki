@@ -1,0 +1,46 @@
+Próbowałem zrobić wiki page w code.google.com, ale cały czas jakiś error.
+
+#summary Instalacja środowiska
+
+<wiki:toc max_depth="1" />
+
+= Eclipse =
+Zainstaluj sobie:
+java (jdk>=1.6)
+http://www.eclipse.org/downloads/packages/eclipse-ide-java-ee-developers/indigosr2
+
+= GIT =
+Zainstaluj sobie git'a
+http://git-scm.com/downloads
+
+Później jakiś plugin do eclipse np:
+Zainstaluj sobie plugin egit do eclipse.
+Help -> Eclipse Marketplace -> Poszukaj egit i zainstaluj.
+
+Znajdź sobie jakiś krótki artykuł o git i poczytaj o:
+  * add
+  * commit
+  * push
+  * pull
+
+Sklonuj sobie repo wg instrukcji:
+http://code.google.com/p/jps-ast-git/source/checkout
+
+= MAVEN =
+Zainstaluj sobie mavena jakiegoś 2.x
+http://maven.apache.org/download.html
+i zrób żebyś z konsoli mógł zawołać {{{ mvn -v }}}
+później wykonaj to co jest w instrukcji zapisanej w doc/HOWTO
+żebyś nie miał błędów kompilacji.
+
+Do eclipse poszukaj sobie pluginu do maven (m2eclipse się chyba nazywa, jak poszukasz maven to znajdzie), żeby ładnie projekt zaimportował.
+
+Jak już będziesz wszystko miał to wystarczy że wejdziesz do katalogu i zawołasz:
+mvn clean package
+I to wszystko.
+W bin zbuduje się jar gotowy do używania a do lib skopiują się wymagane biblioteki.
+
+= Import projektu =
+W eclipse:
+File -> Import -> Existing Maven Project
+później prawym na projekcie Team -> Share Project -> GIT -> Use existing (... coś tam)
