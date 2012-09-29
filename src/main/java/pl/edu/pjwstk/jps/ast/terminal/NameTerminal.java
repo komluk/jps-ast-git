@@ -6,7 +6,7 @@ import edu.pjwstk.jps.ast.terminal.INameTerminal;
 @SuppressWarnings("rawtypes")
 public class NameTerminal extends AbstractTerminal implements INameTerminal {
 	@SuppressWarnings("unchecked")
-	public NameTerminal(Object value) {
+	public NameTerminal(String value) {
 		super(value);
 	}
 
