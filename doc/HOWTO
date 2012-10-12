@@ -1,2 +1,12 @@
 HOWTO install jps-api żeby się kompilowało jak trzeba
-mvn install:install-file -Dfile=src/main/resources/jps-api_1.0.3.jar -DgroupId=pl.edu.pjwstk.jps -DartifactId=jps-api -Dversion=1.0.3 -Dpackaging=jar
+
+mvn install:install-file \
+	-Dfile=src/main/resources/jps-api_1.0.3.jar \
+	-DgroupId=pl.edu.pjwstk.jps \
+	-DartifactId=jps-api \
+	-Dversion=1.0.3 \
+	-Dpackaging=jar
+
+Żeby skompilować i uruchomić kod:
+mvn clean package
+java -jar bin/ast*jar
