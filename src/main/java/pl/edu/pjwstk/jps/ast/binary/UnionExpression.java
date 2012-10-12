@@ -1,0 +1,12 @@
+package pl.edu.pjwstk.jps.ast.binary;
+
+import edu.pjwstk.jps.ast.IExpression;
+import edu.pjwstk.jps.ast.binary.IUnionExpression;
+
+public class UnionExpression extends AbstractBinaryExpression implements IUnionExpression{
+
+	public UnionExpression(IExpression left, IExpression right) {
+		super(left, right);
+	}
+
+}
