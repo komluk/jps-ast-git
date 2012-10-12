@@ -110,7 +110,7 @@
 						<index>true</index>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<classpathPrefix>${project.basedir}/lib/</classpathPrefix>
+							<classpathPrefix>lib/</classpathPrefix>
 							<mainClass>pl.edu.pjwstk.jps.ast.Main</mainClass>
 						</manifest>
 						<manifestEntries>
