@@ -57,5 +57,23 @@ public class Main {
 				)
 			)
 		);
+		
+		//(firma where nazwa=”XYZ”).(zatrudnia where nazwisko=”Kowalski”)
+		IExpression fourth = new DotExpression(
+			new WhereExpression(
+				new NameTerminal("firma"),
+				new EqualsExpression(
+					new NameTerminal("nazwa"),
+					new StringTerminal("XYZ")
+				)
+			),
+			new WhereExpression(
+				new NameTerminal("zatrudnienia"),
+				new EqualsExpression(
+					new NameTerminal("nazwisko"),
+					new StringTerminal("Kowalski")
+				)
+			)
+		);
 	}
 }
