@@ -13,7 +13,7 @@ import pl.edu.pjwstk.jps.ast.terminal.StringTerminal;
 import pl.edu.pjwstk.jps.ast.unary.BagExpression;
 import pl.edu.pjwstk.jps.ast.unary.CountExpression;
 
-public class Main {
+public class AstMain {
 	public static void main(String[] args) {
 		System.out.println("Hello world");
 
