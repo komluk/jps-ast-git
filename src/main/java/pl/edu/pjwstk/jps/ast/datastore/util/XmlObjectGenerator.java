@@ -40,7 +40,6 @@ public class XmlObjectGenerator extends AbstractObjectCreator {
 			Document doc = saxBuilder.build(inputStream);
 			Element rootElement = doc.getRootElement();
 			rootObject = new ComplexObject(rootElement.getName(), OIDGenerator.generatorOID());
-			SBAStore.getInstance().put(rootObject);
 			if(!rootElement.getChildren().isEmpty()) {
 				for(Element child : rootElement.getChildren()) {
 					parseElement(rootObject, child);
@@ -60,7 +59,7 @@ public class XmlObjectGenerator extends AbstractObjectCreator {
 				rootObject.getChildOIDs().add(simpleObject.getOID());
 				log.debug("Detected {} from attribute {} with value {}",
 						new Object[]{simpleObject, attr.getName(), attr.getValue() });
-				SBAStore.getInstance().put(simpleObject);
+				SBAStore.getInstance().putInternal(simpleObject);
 			}
 		}
 		
@@ -69,16 +68,16 @@ public class XmlObjectGenerator extends AbstractObjectCreator {
 			log.debug("Detected {} from <{}>{}</{}>",
 					new Object[] { simpleObject, element.getName(),
 						element.getText(), element.getName()});
-			SBAStore.getInstance().put(simpleObject);
+			SBAStore.getInstance().putInternal(simpleObject);
 			rootObject.getChildOIDs().add(simpleObject.getOID());
 		} else {
 			IComplexObject complexObject = new ComplexObject(element.getName(), OIDGenerator.generatorOID());
 			log.debug("Complex object created from {}", element.getName());
 			rootObject.getChildOIDs().add(complexObject.getOID());
 			for(Element child : element.getChildren()) {
-				parseElement(rootObject, child);
+				parseElement(complexObject, child);
 			}
-			SBAStore.getInstance().put(complexObject);
+			SBAStore.getInstance().putInternal(complexObject);
 		}
 	}
 }

@@ -2,13 +2,16 @@ package pl.edu.pjwstk.jps.ast.datastore;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pl.edu.pjwstk.jps.ast.datastore.util.JavaObjectCreator;
 import pl.edu.pjwstk.jps.ast.datastore.util.OIDGenerator;
+import pl.edu.pjwstk.jps.ast.datastore.util.SBAStorePrinter;
 import pl.edu.pjwstk.jps.ast.datastore.util.XmlObjectGenerator;
 
 import com.google.common.collect.Maps;
@@ -43,8 +46,7 @@ public class SBAStore implements ISBAStore {
 	@Override
 	public void loadXML(String filePath) {
 		try {
-			ISBAObject sbaObject = new XmlObjectGenerator(new File(filePath)).getObject();
-			root.getChildOIDs().add(sbaObject.getOID());
+			put(new XmlObjectGenerator(new File(filePath)).getObject());
 		} catch (Exception e) {
 			log.warn("Unable to read data from file", e);
 		}
@@ -58,7 +60,7 @@ public class SBAStore implements ISBAStore {
 	@Override
 	public void addJavaObject(Object o, String objectName) {
 		ISBAObject sbaObject = new JavaObjectCreator(objectName, o).getObject();
-		root.getChildOIDs().add(sbaObject.getOID());
+		put(sbaObject);
 	}
 
 	@Override
@@ -69,8 +71,21 @@ public class SBAStore implements ISBAStore {
 	}
 	
 	public void put(ISBAObject object) {
-		db.put(object.getOID(), object);
+		putInternal(object);
 		root.getChildOIDs().add(object.getOID());
+	}
+	
+	public void putInternal(ISBAObject object) {
+		db.put(object.getOID(), object);
+	}
+	
+	@Override
+	public String toString() {
+		return new SBAStorePrinter(this).toXml();
+	}
+	
+	public Map<OID, ISBAObject> getDB() {
+		return Collections.unmodifiableMap(db);
 	}
 
 	public static SBAStore getInstance() {

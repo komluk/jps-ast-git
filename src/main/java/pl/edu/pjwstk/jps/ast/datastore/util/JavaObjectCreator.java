@@ -58,35 +58,40 @@ public class JavaObjectCreator extends AbstractObjectCreator {
 			
 			if(isPrimitiveObject(value)) {
 				log.debug("field [{}] is primitive. Class [{}], value [{}]", new Object[] { field.getName(), value.getClass(), value });
-				ISimpleObject<?> simpleObject = parseSimpleObject(name, value);
-				SBAStore.getInstance().put(complexObject);
+				ISimpleObject<?> simpleObject = parseSimpleObject(field.getName(), value);
+				SBAStore.getInstance().putInternal(simpleObject);
 				complexObject.getChildOIDs().add(simpleObject.getOID());
 			} else if (isCollectionObject(value)) {
 				log.debug("field [{}] is iterable of class {}", field.getName(), value.getClass());
+				IComplexObject collectionObject = new ComplexObject(field.getName(), OIDGenerator.generatorOID());
+				complexObject.getChildOIDs().add(collectionObject.getOID());
+				SBAStore.getInstance().putInternal(collectionObject);
+				
 				Iterable<?> iterable = (Iterable<?>) value;
 				for(Object o : iterable) {
-					ISBAObject IterableElement = new JavaObjectCreator(name, o).getObject();
-					SBAStore.getInstance().put(IterableElement);
-					complexObject.getChildOIDs().add(IterableElement.getOID());
+					String fieldName = ClassNameUtils.getName(o.getClass());
+					log.debug("item of class {} from collection {}", new Object[] { o.getClass().getName(), field.getName() });
+					ISBAObject iterableElement = new JavaObjectCreator(fieldName, o).getObject();
+					SBAStore.getInstance().putInternal(iterableElement);
+					collectionObject.getChildOIDs().add(iterableElement.getOID());
 				}
 			} else if(isArrayObject(field)) {
 				Collection<Object> collection = castToCollection(field.getName(), value);
 				log.debug("field [{}] is array of class {}", field.getName(), value.getClass());
 				for(Object o : collection) {
 					ISBAObject arrayElement = new JavaObjectCreator(name, o).getObject();
-					SBAStore.getInstance().put(arrayElement);
+					SBAStore.getInstance().putInternal(arrayElement);
 					complexObject.getChildOIDs().add(arrayElement.getOID());
 				}
 			} else {
 				log.debug("field [{}] is complex inner object of class {}", field.getName(), value.getClass());
 				ISBAObject innerComplexObject = new JavaObjectCreator(field.getName(), value).getObject();
-				SBAStore.getInstance().put(innerComplexObject);
+				SBAStore.getInstance().putInternal(innerComplexObject);
 				complexObject.getChildOIDs().add(innerComplexObject.getOID());
 			}
 		}
 		return complexObject;
 	}
-	
 	
 	private Collection<Object> castToCollection(String fieldName, Object value) {
 		List<Object> result = Lists.newArrayList();
