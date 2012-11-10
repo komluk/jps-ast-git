@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import com.beust.jcommander.internal.Lists;
 import com.google.common.base.Objects.ToStringHelper;
+import com.google.common.collect.Lists;
 
 import edu.pjwstk.jps.result.ISingleResult;
 import edu.pjwstk.jps.result.IStructResult;
