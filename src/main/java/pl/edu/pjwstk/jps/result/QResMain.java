@@ -7,9 +7,20 @@ import edu.pjwstk.jps.result.ISingleResult;
 
 public class QResMain {
 	public static void main(String[] args) {
+		System.out.println("");
+		System.out.println("");
+		
 		exampleQuery();
+		System.out.println("");
+		
 		query1();
+		System.out.println("");
+		
 		query2();
+		System.out.println("");
+		
+		query3();
+		System.out.println("");
 	}
 	
 	private static void query1() {
@@ -38,7 +49,9 @@ public class QResMain {
 		
 		qres.push(new CartesianProduct(leftBag, rightBag).getResult());
 		IBagResult res = (IBagResult) qres.pop();
-		//qres.push(new AsExpression("nazwa", res)); nichuja
+		qres.push(new BinderResult("nazwa", res));
+		
+		System.out.println("(bag(1, 2.1), bag(3+4, \"test\")) as nazwa = " + qres.pop());
 	}
 	
 	private static void query2() {
@@ -64,7 +77,28 @@ public class QResMain {
 		IAbstractQueryResult second = stack.pop();
 		IAbstractQueryResult first = stack.pop();
 		
-		System.out.println(new CartesianProduct(first, second).getResult());
+		System.out.println("(bag(\"ala\", \"ma\", \"kota\"), (8*10, false)) = " + new CartesianProduct(first, second).getResult());
+	}
+	
+	private static void query3() {
+		QResStack stack = new QResStack();
+		stack.push(new BagResult(new StringResult("JPS"), new StringResult("rules")));
+		
+		IAbstractQueryResult bag = stack.pop();
+		
+		stack.push(new BinderResult("x", bag));
+		stack.push(new DoubleResult(2.2));
+
+		DoubleResult number = (DoubleResult) stack.pop();
+		BinderResult binder = (BinderResult) stack.pop();
+		
+		stack.push(new CartesianProduct(binder, number).getResult());
+		stack.push(new BooleanResult(true));
+		
+		IAbstractQueryResult second = stack.pop();
+		IAbstractQueryResult first = stack.pop();
+		
+		System.out.println("(((bag(\"JPS\", \"rules\")) groupas x), 2.2, true) = " + new CartesianProduct(first, second).getResult());
 	}
 	
 	private static void exampleQuery() {
