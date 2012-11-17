@@ -1,6 +1,5 @@
 package pl.edu.pjwstk.jps.result;
 
-
 import com.google.common.base.Objects;
 import com.google.common.base.Objects.ToStringHelper;
 
