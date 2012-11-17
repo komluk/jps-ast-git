@@ -69,23 +69,19 @@ public class JavaObjectCreator extends AbstractObjectCreator {
 				complexObject.getChildOIDs().add(simpleObject.getOID());
 			} else if (isCollectionObject(value)) {
 				log.debug("field [{}] is iterable of class {}", field.getName(), value.getClass());
-				IComplexObject collectionObject = new ComplexObject(field.getName(), OIDGenerator.generatorOID());
-				complexObject.getChildOIDs().add(collectionObject.getOID());
-				SBAStore.getInstance().putInternal(collectionObject);
 				
 				Iterable<?> iterable = (Iterable<?>) value;
 				for(Object o : iterable) {
-					String fieldName = ClassNameUtils.getName(o.getClass());
 					log.debug("item of class {} from collection {}", new Object[] { o.getClass().getName(), field.getName() });
-					ISBAObject iterableElement = new JavaObjectCreator(fieldName, o).getObject();
+					ISBAObject iterableElement = new JavaObjectCreator(field.getName(), o).getObject();
 					SBAStore.getInstance().putInternal(iterableElement);
-					collectionObject.getChildOIDs().add(iterableElement.getOID());
+					complexObject.getChildOIDs().add(iterableElement.getOID());
 				}
 			} else if(isArrayObject(field)) {
 				Collection<Object> collection = castToCollection(field.getName(), value);
 				log.debug("field [{}] is array of class {}", field.getName(), value.getClass());
 				for(Object o : collection) {
-					ISBAObject arrayElement = new JavaObjectCreator(name, o).getObject();
+					ISBAObject arrayElement = new JavaObjectCreator(field.getName(), o).getObject();
 					SBAStore.getInstance().putInternal(arrayElement);
 					complexObject.getChildOIDs().add(arrayElement.getOID());
 				}
