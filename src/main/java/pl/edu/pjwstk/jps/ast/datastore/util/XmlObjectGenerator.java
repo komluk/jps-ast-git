@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.List;
 
 import org.jdom2.Attribute;
 import org.jdom2.Document;
@@ -12,11 +13,14 @@ import org.jdom2.input.SAXBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+
 import pl.edu.pjwstk.jps.ast.datastore.ComplexObject;
 import pl.edu.pjwstk.jps.ast.datastore.SBAStore;
 import edu.pjwstk.jps.datastore.IComplexObject;
 import edu.pjwstk.jps.datastore.ISBAObject;
 import edu.pjwstk.jps.datastore.ISimpleObject;
+import edu.pjwstk.jps.datastore.OID;
 
 public class XmlObjectGenerator extends AbstractObjectCreator {
 	private static final Logger log = LoggerFactory.getLogger(XmlObjectGenerator.class);
@@ -33,7 +37,7 @@ public class XmlObjectGenerator extends AbstractObjectCreator {
 	}
 	
 	@Override
-	public ISBAObject getObject() {
+	public Iterable<ISBAObject> getObjects() {
 		IComplexObject rootObject = null;
 		
 		try {
@@ -49,7 +53,11 @@ public class XmlObjectGenerator extends AbstractObjectCreator {
 			log.error("Unable to read data from stream", e);
 		}
 		
-		return rootObject;
+		List<ISBAObject> result = Lists.newArrayList();
+		for(OID o : rootObject.getChildOIDs()) {
+			result.add(SBAStore.getInstance().getDB().get(o));
+		}
+		return result;
 	}
 	
 	private void parseElement(IComplexObject rootObject, Element element) {

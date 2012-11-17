@@ -32,8 +32,14 @@ public class JavaObjectCreator extends AbstractObjectCreator {
 		this.name = name;
 		this.object = object;
 	}
-
+	
 	@Override
+	public Iterable<ISBAObject> getObjects() {
+		List<ISBAObject> res = Lists.newArrayList();
+		res.add(getObject());
+		return res;
+	}
+
 	public ISBAObject getObject() {
 		Class<?> clazz = object.getClass();
 		if(isPrimitiveObject(object)) {

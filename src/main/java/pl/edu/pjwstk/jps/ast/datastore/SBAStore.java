@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +45,15 @@ public class SBAStore implements ISBAStore {
 	@Override
 	public void loadXML(String filePath) {
 		try {
-			put(new XmlObjectGenerator(new File(filePath)).getObject());
+			for(ISBAObject object : new XmlObjectGenerator(new File(filePath)).getObjects()) {
+				if(!db.containsKey(object.getOID())) {
+					put(object);
+				}
+				
+				if(!root.getChildOIDs().contains(object.getOID())) {
+					root.getChildOIDs().add(object.getOID());
+				}
+			}
 		} catch (Exception e) {
 			log.warn("Unable to read data from file", e);
 		}

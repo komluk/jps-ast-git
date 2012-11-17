@@ -7,4 +7,5 @@ public final class ClassNameUtils {
 		String name = clazz.getSimpleName();
 		return Character.toLowerCase(name.charAt(0)) + name.substring(1);
 	}
+	
 }

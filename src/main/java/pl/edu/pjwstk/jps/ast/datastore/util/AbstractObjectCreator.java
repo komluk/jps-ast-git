@@ -8,7 +8,7 @@ import edu.pjwstk.jps.datastore.ISBAObject;
 import edu.pjwstk.jps.datastore.ISimpleObject;
 
 public abstract class AbstractObjectCreator {
-	public abstract ISBAObject getObject();
+	public abstract Iterable<ISBAObject> getObjects();
 	
 	protected ISimpleObject<?> parseSimpleObject(String fieldName, Object object) {
 		String str = object.toString();
