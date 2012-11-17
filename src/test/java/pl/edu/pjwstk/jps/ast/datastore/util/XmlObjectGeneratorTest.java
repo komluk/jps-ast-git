@@ -48,7 +48,7 @@ public class XmlObjectGeneratorTest {
 	
 	@Test
 	public void testGetObject() {
-		new XmlObjectGenerator(new ByteArrayInputStream(simpleXml.getBytes())).getObject();
+		new XmlObjectGenerator(new ByteArrayInputStream(simpleXml.getBytes())).getObjects();
 	}
 			
 }

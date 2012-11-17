@@ -3,6 +3,8 @@ package pl.edu.pjwstk.jps.ast.datastore.util;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,8 @@ import pl.edu.pjwstk.jps.ast.datastore.SBAStore;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import edu.pjwstk.jps.datastore.IComplexObject;
 import edu.pjwstk.jps.datastore.ISBAObject;
@@ -22,6 +26,8 @@ public class JavaObjectCreator extends AbstractObjectCreator {
 	
 	private final Object object;
 	private String name;
+	
+	private final Map<Object, ISBAObject> processed = Maps.newHashMap();
 
 	public JavaObjectCreator(String name, Object object) {
 		Preconditions.checkNotNull(name, "Name can not be null");
@@ -87,7 +93,10 @@ public class JavaObjectCreator extends AbstractObjectCreator {
 				}
 			} else {
 				log.debug("field [{}] is complex inner object of class {}", field.getName(), value.getClass());
-				ISBAObject innerComplexObject = new JavaObjectCreator(field.getName(), value).getObject();
+				ISBAObject innerComplexObject = processed.get(value);
+				if(innerComplexObject == null) {
+					innerComplexObject = new JavaObjectCreator(field.getName(), value).getObject();
+				}
 				SBAStore.getInstance().putInternal(innerComplexObject);
 				complexObject.getChildOIDs().add(innerComplexObject.getOID());
 			}
