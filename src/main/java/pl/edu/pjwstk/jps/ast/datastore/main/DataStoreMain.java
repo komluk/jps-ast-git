@@ -8,9 +8,9 @@ import com.google.common.collect.Lists;
 import pl.edu.pjwstk.jps.ast.datastore.SBAStore;
 import pl.edu.pjwstk.jps.ast.datastore.util.SBAStorePrinter;
 
-public class Main {
+public class DataStoreMain {
 	public static void main(String[] args) throws Exception {
-		SBAStore.getInstance().loadXML(new File(Main.class.getResource("/example.xml").toURI()).getAbsolutePath());
+		SBAStore.getInstance().loadXML(new File(DataStoreMain.class.getResource("/example.xml").toURI()).getAbsolutePath());
 		
 		List<Employee> employees = Lists.newArrayList(
 				new Employee("Jan", "Nowak", 5000),
