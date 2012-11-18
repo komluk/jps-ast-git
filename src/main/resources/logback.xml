@@ -18,10 +18,11 @@
 	</appender>
 
 	<logger name="ch.qos.logback" level="WARN" />
-	<logger name="pl.edu.pjwstk.jps.qres.interpreter.QResStack" level="WARN" />
+	<logger name="pl.edu.pjwstk.jps.qres.interpreter.QResStack" level="DEBUG" />
+	<logger name="pl.edu.pjwstk.jps.interpreter.envs.ENVS" level="DEBUG" />
 
 	<root level="INFO">
-		<!-- <appender-ref ref="STDOUT" /> -->
+		<appender-ref ref="STDOUT" />
 		<appender-ref ref="FILE" />
 	</root>
 </configuration>
