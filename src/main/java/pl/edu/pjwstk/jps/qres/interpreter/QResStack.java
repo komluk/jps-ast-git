@@ -30,7 +30,7 @@ public class QResStack implements IQResStack {
 		IAbstractQueryResult res = stack.pop();
 
 		if(debug) {
-			log.debug("after pop {}", toString());
+			log.debug("after stack pop [\n{}]", toString());
 		}
 		
 		return res;
@@ -41,20 +41,19 @@ public class QResStack implements IQResStack {
 		stack.push(value);
 
 		if(debug) {
-			log.debug("after push {}", toString());
+			log.debug("after stack push [\n{}]", toString());
 		}
 	}
 	
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("stack: \n");
+		StringBuilder sb = new StringBuilder();
 		for(IAbstractQueryResult res : stack) {
-			sb.append(res.toString()).append("\n");
+			sb.append("\t").append(res.toString()).append("\n");
 		}
 		if(stack.isEmpty()) {
-			sb.append("empty");
+			sb.append("empty\n");
 		}
-		sb.append("\n");
 		return sb.toString();
 	}
 }
