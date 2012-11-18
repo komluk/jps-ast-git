@@ -12,7 +12,10 @@ import pl.edu.pjwstk.jps.result.IntegerResult;
 import pl.edu.pjwstk.jps.result.StringResult;
 import pl.edu.pjwstk.jps.result.StructResult;
 import pl.edu.pjwstk.jps.result.util.CartesianProduct;
+import edu.pjwstk.jps.datastore.IBooleanObject;
+import edu.pjwstk.jps.datastore.ISBAObject;
 import edu.pjwstk.jps.datastore.IStringObject;
+import edu.pjwstk.jps.result.IAbstractQueryResult;
 import edu.pjwstk.jps.result.IBagResult;
 import edu.pjwstk.jps.result.IBooleanResult;
 import edu.pjwstk.jps.result.IIntegerResult;
@@ -24,6 +27,7 @@ public class ENVSMain {
 		SBAStore.getInstance().loadXML(new File(ENVSMain.class.getResource("/envs.xml").toURI()).getAbsolutePath());
 		System.out.println("Loaded data:\n" + new SBAStorePrinter(SBAStore.getInstance()).toXml());
 		
+		query1();
 		query2();
 	}
 
@@ -31,6 +35,65 @@ public class ENVSMain {
 	 * ((emp where married == true).book.author) union (realNumber)
 	 */
 	private static void query1() {
+		ENVS envs = new ENVS();
+		QResStack qres = new QResStack();
+		
+		envs.init(SBAStore.getInstance().getEntryOID(), SBAStore.getInstance());
+		qres.push(envs.bind("emp"));
+		
+		BagResult marriedResult = new BagResult();
+		for(ISingleResult emp : ((IBagResult)qres.pop()).getElements()) {
+			envs.push(envs.nested(emp, SBAStore.getInstance()));
+			IBagResult marriedEmp = envs.bind("married");
+			qres.push(marriedEmp);
+			qres.push(new BooleanResult(true));
+			IBooleanResult trueResult = (IBooleanResult) qres.pop();
+			IBooleanObject married = (IBooleanObject) SBAStore.getInstance().retrieve(retrive(qres, IReferenceResult.class).getOIDValue());
+			if(married.getValue() == trueResult.getValue()) {
+				marriedResult.getElements().add(emp);
+			}
+			envs.pop();
+		}
+		
+		qres.push(marriedResult);
+		System.out.println("married emps: " + marriedResult);
+		IBagResult books = new BagResult();
+		for(ISingleResult marriedEmp : ((IBagResult)qres.pop()).getElements()) {
+			envs.push(envs.nested(marriedEmp, SBAStore.getInstance()));
+			qres.push(envs.bind("book"));
+			books.getElements().addAll(((IBagResult)qres.pop()).getElements());
+			envs.pop();
+		}
+		qres.push(books);
+		
+		IBagResult authors = new BagResult();
+		for(ISingleResult book : ((IBagResult)qres.pop()).getElements()) {
+			envs.push(envs.nested(book, SBAStore.getInstance()));
+			qres.push(envs.bind("author"));
+			authors.getElements().addAll(((IBagResult)qres.pop()).getElements());
+			envs.pop();
+		}
+		qres.push(authors);
+		
+		System.out.println("authors = " + authors);
+		
+		qres.push(envs.bind("realNumber"));
+//		union:
+//		Ewaluacja:
+//			1. Zainicjalizuj pusty bag (bedziemy odnosic sie do niego jaki eres).
+//			2. Wykonaj oba podwyrazenia.
+//			3. Podnies dwa elementy z QRES.
+//			4. Dodaj
+		IBagResult unionResults = new BagResult();
+		unionResults.getElements().addAll(((IBagResult)qres.pop()).getElements());
+		unionResults.getElements().addAll(((IBagResult)qres.pop()).getElements());
+		qres.push(unionResults);
+		System.out.println("union: " + unionResults);
+		
+		for(ISingleResult unionResult : ((IBagResult)qres.pop()).getElements()) {
+			ISBAObject object = SBAStore.getInstance().retrieve(((IReferenceResult)unionResult).getOIDValue());
+			System.out.println("union element [" + object.getOID() + "] " + object);
+		}
 	}
 	
 	/**
@@ -100,8 +163,24 @@ public class ENVSMain {
 			StructResult struct = (StructResult) new CartesianProduct(new StringResult(leftStreet.getValue()), new StringResult(rightCity.getValue())).getResult().getElements().iterator().next();
 			structResults.getElements().add(struct);
 		}
+		envs.pop();
 		qres.push(structResults);
 		
 		System.out.println("address result = " + qres.pop());
+	}
+	
+	public static <T> T retrive(QResStack qres, Class<T> clazz) {
+		IAbstractQueryResult res = qres.pop();
+		if(res instanceof IBagResult) {
+			IBagResult bag = (IBagResult) res;
+			if(bag.getElements().size() > 1) {
+				throw new IllegalStateException();
+			} else {
+				ISingleResult singleResult = bag.getElements().iterator().next();
+				return (T)singleResult;
+			}
+		} else {
+			return (T)res;
+		}
 	}
 }
