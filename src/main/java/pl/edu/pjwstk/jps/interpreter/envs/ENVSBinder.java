@@ -1,5 +1,7 @@
 package pl.edu.pjwstk.jps.interpreter.envs;
 
+import com.google.common.base.Objects;
+
 import edu.pjwstk.jps.interpreter.envs.IENVSBinder;
 import edu.pjwstk.jps.result.IAbstractQueryResult;
 
@@ -20,5 +22,13 @@ public class ENVSBinder implements IENVSBinder {
 	@Override
 	public IAbstractQueryResult getValue() {
 		return queryResult;
+	}
+	
+	@Override
+	public String toString() {
+		return Objects.toStringHelper(this)
+				.add("name", getName())
+				.add("value", getValue())
+				.toString();
 	}
 }

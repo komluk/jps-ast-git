@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import edu.pjwstk.jps.interpreter.envs.IENVSBinder;
@@ -34,5 +35,12 @@ public class ENVSFrame implements IENVSFrame {
 			this.binders.add(binder);
 		}
 		return this;
+	}
+	
+	@Override
+	public String toString() {
+		return Objects.toStringHelper(this)
+				.add("binders", binders)
+				.toString();
 	}
 }
