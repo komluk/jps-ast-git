@@ -22,7 +22,7 @@
 	<logger name="pl.edu.pjwstk.jps.interpreter.envs.ENVS" level="DEBUG" />
 
 	<root level="INFO">
-		<appender-ref ref="STDOUT" />
+		<!-- <appender-ref ref="STDOUT" />  -->
 		<appender-ref ref="FILE" />
 	</root>
 </configuration>
