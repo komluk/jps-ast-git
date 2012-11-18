@@ -27,7 +27,11 @@
 			<zip>00-222</zip>
 			<city>Warszawa</city>
 		</address>
-		<married>false</married>
+		<married>true</married>
+		<book>
+			<author>Juliusz Słowacki</author>
+			<title>ignorant jestem i nie znam ;P</title>
+		</book>
 	</emp>
 	<realNumber>234,35</realNumber>
 </root>
