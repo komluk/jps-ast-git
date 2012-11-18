@@ -1,4 +1,4 @@
-package pl.edu.pjwstk.jps.result;
+package pl.edu.pjwstk.jps.result.util;
 
 import static org.testng.Assert.*;
 
@@ -6,6 +6,11 @@ import java.util.Arrays;
 import java.util.Set;
 
 import org.testng.annotations.Test;
+
+import pl.edu.pjwstk.jps.result.BagResult;
+import pl.edu.pjwstk.jps.result.IntegerResult;
+import pl.edu.pjwstk.jps.result.StructResult;
+import pl.edu.pjwstk.jps.result.util.CartesianProduct;
 
 import com.google.common.collect.Sets;
 

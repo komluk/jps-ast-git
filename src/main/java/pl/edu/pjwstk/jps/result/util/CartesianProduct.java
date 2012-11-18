@@ -1,7 +1,11 @@
-package pl.edu.pjwstk.jps.result;
+package pl.edu.pjwstk.jps.result.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import pl.edu.pjwstk.jps.result.BagResult;
+import pl.edu.pjwstk.jps.result.CollectionResult;
+import pl.edu.pjwstk.jps.result.StructResult;
 
 import edu.pjwstk.jps.result.IAbstractQueryResult;
 import edu.pjwstk.jps.result.IBagResult;
