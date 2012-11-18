@@ -1,6 +1,7 @@
 package pl.edu.pjwstk.jps.result;
 
 import pl.edu.pjwstk.jps.qres.interpreter.QResStack;
+import pl.edu.pjwstk.jps.result.util.CartesianProduct;
 import edu.pjwstk.jps.result.IAbstractQueryResult;
 import edu.pjwstk.jps.result.IBagResult;
 import edu.pjwstk.jps.result.ISingleResult;
