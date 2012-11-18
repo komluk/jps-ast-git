@@ -32,6 +32,9 @@ public final class JpsProperties {
 		return Boolean.parseBoolean(prop.getProperty("qres.debug", "false"));
 	}
 	
+	public boolean isEnvsInDebug() {
+		return Boolean.parseBoolean(prop.getProperty("envs.debug", "false"));
+	}
 	public static JpsProperties getInstance() {
 		return instance;
 	}
