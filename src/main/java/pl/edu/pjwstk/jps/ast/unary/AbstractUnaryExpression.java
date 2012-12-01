@@ -4,7 +4,7 @@ import pl.edu.pjwstk.jps.ast.AbstractExpression;
 import edu.pjwstk.jps.ast.IExpression;
 import edu.pjwstk.jps.ast.unary.IUnaryExpression;
 
-public class AbstractUnaryExpression extends AbstractExpression implements IUnaryExpression {
+abstract class AbstractUnaryExpression extends AbstractExpression implements IUnaryExpression {
 	private final IExpression innerExpression;
 	
 	public AbstractUnaryExpression(IExpression innerExpression) {

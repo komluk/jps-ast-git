@@ -4,7 +4,7 @@ import pl.edu.pjwstk.jps.ast.AbstractExpression;
 import edu.pjwstk.jps.ast.IExpression;
 import edu.pjwstk.jps.ast.auxname.IAuxiliaryNameExpression;
 
-public class AbstractAuxiliaryNameExpression extends AbstractExpression implements IAuxiliaryNameExpression {
+abstract class AbstractAuxiliaryNameExpression extends AbstractExpression implements IAuxiliaryNameExpression {
 	private final String name;
 	private final IExpression innerExpression;
 	

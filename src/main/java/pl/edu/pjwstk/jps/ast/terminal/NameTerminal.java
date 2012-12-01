@@ -1,8 +1,8 @@
 package pl.edu.pjwstk.jps.ast.terminal;
 
 import edu.pjwstk.jps.ast.terminal.INameTerminal;
+import edu.pjwstk.jps.visitor.ASTVisitor;
 
-//FIXME czy tak jest good?
 @SuppressWarnings("rawtypes")
 public class NameTerminal extends AbstractTerminal implements INameTerminal {
 	@SuppressWarnings("unchecked")
@@ -13,5 +13,10 @@ public class NameTerminal extends AbstractTerminal implements INameTerminal {
 	@Override
 	public String getName() {
 		return getValue().toString();
+	}
+
+	@Override
+	public void accept(ASTVisitor visitor) {
+		visitor.visitNameTerminal(this);
 	}
 }

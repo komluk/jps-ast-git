@@ -2,6 +2,7 @@ package pl.edu.pjwstk.jps.ast.binary;
 
 import edu.pjwstk.jps.ast.IExpression;
 import edu.pjwstk.jps.ast.binary.IForAllExpression;
+import edu.pjwstk.jps.visitor.ASTVisitor;
 
 public class ForAllExpression extends AbstractBinaryExpression implements IForAllExpression {
 
@@ -9,4 +10,8 @@ public class ForAllExpression extends AbstractBinaryExpression implements IForAl
 		super(left, right);
 	}
 
+	@Override
+	public void accept(ASTVisitor visitor) {
+		visitor.visitAllExpression(this);
+	}
 }

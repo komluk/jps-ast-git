@@ -4,7 +4,7 @@ import pl.edu.pjwstk.jps.ast.AbstractExpression;
 import edu.pjwstk.jps.ast.IExpression;
 import edu.pjwstk.jps.ast.binary.IBinaryExpression;
 
-public class AbstractBinaryExpression extends AbstractExpression implements IBinaryExpression {
+abstract class AbstractBinaryExpression extends AbstractExpression implements IBinaryExpression {
 	private final IExpression leftExpression;
 	private final IExpression rightExpression;
 	
