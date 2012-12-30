@@ -1,3 +1,5 @@
+.idea/
+ast.iml
 .classpath
 jps.log
 jps.*.log.gz
