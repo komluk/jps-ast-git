@@ -25,6 +25,22 @@ public class QResStack implements IQResStack {
 		}
 	}
 
+	public IAbstractQueryResult getFirst() {
+		return stack.getFirst();
+	}
+
+	public IAbstractQueryResult getLast() {
+		return stack.getLast();
+	}
+
+	public boolean contains(Object o) {
+		return stack.contains(o);
+	}
+
+	public int size() {
+		return stack.size();
+	}
+
 	@Override
 	public IAbstractQueryResult pop() {
 		IAbstractQueryResult res = stack.pop();

@@ -2,6 +2,7 @@ package pl.edu.pjwstk.jps.result;
 
 import java.util.Collection;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import edu.pjwstk.jps.result.IAbstractQueryResult;
@@ -34,6 +35,7 @@ public class BagResult extends CollectionResult<Collection<ISingleResult>> imple
 	}
 	@Override
 	protected Collection<ISingleResult> initCollection() {
+//		return Lists.newArrayList();
 		return Sets.newHashSet();
 	}
 }

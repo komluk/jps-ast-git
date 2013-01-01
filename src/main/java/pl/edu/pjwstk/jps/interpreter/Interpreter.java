@@ -1,5 +1,6 @@
 package pl.edu.pjwstk.jps.interpreter;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import edu.pjwstk.jps.ast.IExpression;
@@ -20,6 +21,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
+import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.deRefrence;
+import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toIterable;
+import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toSingleResult;
+import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.equals;
+
 /**
  * jeszcze w życiu takiego potwora nie zrobiłem....
  */
@@ -29,11 +35,19 @@ public class Interpreter implements IInterpreter {
 	private final ISBAStore store;
 	
 	public Interpreter(ISBAStore store) {
-		this.qres = new QResStack();
-		this.envs = new ENVS();
-		envs.init(store.getEntryOID(), store);
-		
+		this(store, new QResStack(), new ENVS());
+
+		init();
+	}
+
+	protected Interpreter(ISBAStore store, QResStack stack, ENVS envs) {
 		this.store = store;
+		this.envs = envs;
+		this.qres = stack;
+	}
+
+	protected void init() {
+		envs.init(store.getEntryOID(), store);;
 	}
 
 	/**
@@ -48,16 +62,53 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitAsExpression(IAsExpression expr) {
-		IAbstractQueryResult res = eval(expr);
-
-		IBagResult workBag = InterpreterUtils.toBag(res);
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 		IBagResult result = new BagResult();
 
-		for(ISingleResult singleResult : workBag.getElements()) {
+		for(ISingleResult singleResult : toIterable(res)) {
 			result.getElements().add(new BinderResult(expr.getAuxiliaryName(), singleResult));
 		}
 
 		qres.push(result);
+	}
+
+	private class ExpressionExecutor {
+		public final IExpression [] expressions;
+		private final IAbstractQueryResult [] queryResults;
+
+		public ExpressionExecutor(IExpression ... expressions) {
+			this.expressions = expressions;
+			queryResults = new IAbstractQueryResult[expressions.length];
+
+			accept();		//nie jest to za ładne ale co tam
+		}
+
+		private ExpressionExecutor accept() {
+			for(IExpression ex : expressions) {
+				ex.accept(Interpreter.this);
+			}
+
+			for(int i = expressions.length - 1; i >= 0; i--) {
+				queryResults[i] = qres.pop();
+			}
+//			for(int i = 0 ; i < expressions.length; i++) {
+//				queryResults[i] = qres.pop();
+//			}
+
+			return this;
+		}
+
+		public IAbstractQueryResult [] getQueryResults() {
+			return queryResults;
+		}
+
+		public IAbstractQueryResult getFirst() {
+			return get(0);
+		}
+
+		public IAbstractQueryResult get(int index) {
+			return queryResults[index];
+		}
 	}
 
 	/**
@@ -70,7 +121,7 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitGroupAsExpression(IGroupAsExpression expr) {
-		IAbstractQueryResult res = eval(expr);
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 
 		IBinderResult binderResult = new BinderResult(expr.getAuxiliaryName(), res);
 		qres.push(binderResult);
@@ -94,15 +145,14 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitAllExpression(IForAllExpression expr) {
-		IAbstractQueryResult left = eval(expr.getLeftExpression());				//2,3
-		IBagResult leftBag = InterpreterUtils.toBag(left);
+		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();//2,3
 
-		for (ISingleResult element : leftBag.getElements()) {					//4
+		for (ISingleResult element : toIterable(left)) {					//4
 			envs.nested(element, store);										//4.1, 4.2
 
-			IAbstractQueryResult rightRes = eval(expr.getRightExpression());	//4.3, 4.4
+			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
 
-			IAbstractQueryResult single = InterpreterUtils.toSingleResult(rightRes);
+			IAbstractQueryResult single = toSingleResult(rightRes);
 			if(single instanceof IBooleanResult) {
 				IBooleanResult booleanResult = (IBooleanResult) single;
 				if(!booleanResult.getValue().booleanValue()) {
@@ -132,15 +182,15 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitAndExpression(IAndExpression expr) {
-		expr.getLeftExpression().accept(this);				//1
-		expr.getRightExpression().accept(this);				//1
-		IAbstractQueryResult rightRes = qres.pop();			//2
-		IAbstractQueryResult leftRes = qres.pop();			//2
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		leftRes = InterpreterUtils.toSingleResult(leftRes);		//3
-		leftRes = InterpreterUtils.deRefrence(leftRes, store);	//4
-		rightRes = InterpreterUtils.toSingleResult(rightRes);	//3
-		rightRes = InterpreterUtils.deRefrence(rightRes, store);//4
+		IAbstractQueryResult leftRes = executor.get(0);
+		IAbstractQueryResult rightRes = executor.get(1);
+
+		leftRes = toSingleResult(leftRes);		//3
+		leftRes = deRefrence(leftRes, store);	//4
+		rightRes = toSingleResult(rightRes);	//3
+		rightRes = deRefrence(rightRes, store);//4
 
 		if(leftRes instanceof IBooleanResult && rightRes instanceof IBooleanResult) {
 			IBooleanResult leftBoolean = (IBooleanResult) leftRes;
@@ -172,15 +222,14 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitAnyExpression(IForAnyExpression expr) {
-		IAbstractQueryResult left = eval(expr.getLeftExpression());				//2,3
-		IBagResult leftBag = InterpreterUtils.toBag(left);
+		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();				//2,3
 
-		for (ISingleResult element : leftBag.getElements()) {					//4
+		for (ISingleResult element : toIterable(left)) {					//4
 			envs.nested(element, store);										//4.1, 4.2
 
-			IAbstractQueryResult rightRes = eval(expr.getRightExpression());	//4.3, 4.4
+			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
 
-			IAbstractQueryResult single = InterpreterUtils.toSingleResult(rightRes);
+			IAbstractQueryResult single = toSingleResult(rightRes);
 			if(single instanceof IBooleanResult) {
 				IBooleanResult booleanResult = (IBooleanResult) single;
 				if(booleanResult.getValue().booleanValue()) {
@@ -202,25 +251,24 @@ public class Interpreter implements IInterpreter {
 
 		expr.getLeftExpression().accept(this);
 		IAbstractQueryResult leftQueryResult = qres.pop();
-		IBagResult leftBag = InterpreterUtils.toBag(leftQueryResult);
-		visitResult.getElements().addAll(leftBag.getElements());
+		Iterables.addAll(visitResult.getElements(), toIterable(leftQueryResult));
 
 		List<IAbstractQueryResult> tmpList = Lists.newArrayList();
-		tmpList.addAll(leftBag.getElements());
+		tmpList.addAll(visitResult.getElements());
 		ListIterator<IAbstractQueryResult> tmpIt = tmpList.listIterator();
 
 		while(tmpIt.hasNext()) {
 			IAbstractQueryResult element = tmpIt.next();
-			element = InterpreterUtils.deRefrence(element, store);
+			element = deRefrence(element, store);
 			envs.nested(element, store);
 
 			expr.getRightExpression().accept(this);
 			IAbstractQueryResult right = qres.pop();
 
-			IBagResult rightBag = InterpreterUtils.toBag(right);
-			visitResult.getElements().addAll(rightBag.getElements());
+			Iterable<ISingleResult> rightBag = toIterable(right);
+			Iterables.addAll(visitResult.getElements(), rightBag);
 
-			for(ISingleResult singleResult : rightBag.getElements()) {
+			for(ISingleResult singleResult : rightBag) {
 				tmpIt.add(singleResult);
 			}
 
@@ -243,12 +291,11 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitCommaExpression(ICommaExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
-		
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
-		
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
+
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
+
 		qres.push(new CartesianProduct(left, right).getResult());
 	}
 
@@ -266,11 +313,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitDivideExpression(IDivideExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberCalculator(store, left, right) {
 			@Override
@@ -300,8 +346,7 @@ public class Interpreter implements IInterpreter {
 		BagResult dotRes = new BagResult();								//1
 
 		IAbstractQueryResult left = eval(expr.getLeftExpression());		//2,3
-		IBagResult leftBag = InterpreterUtils.toBag(left);
-		for (ISingleResult element : leftBag.getElements()) {			//4
+		for (ISingleResult element : toIterable(left)) {			//4
 			envs.nested(element, store);								//4.1, 4.2
 			expr.getRightExpression().accept(this);
 			IAbstractQueryResult rightRes = eval(expr.getRightExpression());	//4.3, 4.4
@@ -360,11 +405,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitGreaterThanExpression(IGreaterThanExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberBooleanCalculator(store, left, right) {
 			@Override
@@ -388,11 +432,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitGreaterOrEqualThanExpression(IGreaterOrEqualThanExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberBooleanCalculator(store, left, right) {
 			@Override
@@ -415,14 +458,13 @@ public class Interpreter implements IInterpreter {
 	public void visitInExpression(IInExpression expr) {
 		IBagResult result = new BagResult();		//1
 
-		expr.getLeftExpression().accept(this);		//2
-		expr.getRightExpression().accept(this);		//2
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());		//2
 
-		IAbstractQueryResult right = qres.pop();	//3
-		IAbstractQueryResult left = qres.pop();		//3
+		IAbstractQueryResult left = executor.get(0);		//3
+		IAbstractQueryResult right = executor.get(1);		//3
 
-		for(ISingleResult res : InterpreterUtils.toBag(left).getElements()) {
-			for(ISingleResult inRes : InterpreterUtils.toBag(right).getElements()) {
+		for(ISingleResult res : toIterable(left)) {
+			for(ISingleResult inRes : toIterable(right)) {
 				if(res.equals(inRes)) {
 					result.getElements().add(res);
 					break;
@@ -447,17 +489,16 @@ public class Interpreter implements IInterpreter {
 	public void visitIntersectExpression(IIntersectExpression expr) {
 		IBagResult result = new BagResult();		//1
 
-		expr.getLeftExpression().accept(this);		//2
-		expr.getRightExpression().accept(this);		//2
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());	//2
 
-		IAbstractQueryResult right = qres.pop();	//3
-		IAbstractQueryResult left = qres.pop();		//3
+		IAbstractQueryResult left = executor.get(0);		//3
+		IAbstractQueryResult right = executor.get(1);		//3
 
-		left = InterpreterUtils.deRefrence(left, store);
-		right = InterpreterUtils.deRefrence(right, store);
+		left = deRefrence(left, store);
+		right = deRefrence(right, store);
 
-		for(ISingleResult res1 : InterpreterUtils.toBag(left).getElements()) {			//4
-			for(ISingleResult res2 : InterpreterUtils.toBag(right).getElements()) {
+		for(ISingleResult res1 : toIterable(left)) {			//4
+			for(ISingleResult res2 : toIterable(right)) {
 				if(res1.equals(res2)) {
 					result.getElements().add(res1);
 				}
@@ -488,12 +529,11 @@ public class Interpreter implements IInterpreter {
 	public void visitJoinExpression(IJoinExpression expr) {
 		BagResult dotRes = new BagResult();								//1
 
-		IAbstractQueryResult left = eval(expr.getLeftExpression());		//2,3
-		IBagResult leftBag = InterpreterUtils.toBag(left);
-		for (ISingleResult element : leftBag.getElements()) {			//4
-			envs.nested(element, store);								//4.1, 4.2
-			expr.getRightExpression().accept(this);
-			IAbstractQueryResult rightRes = eval(expr.getRightExpression());	//4.3, 4.4
+		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();		//2,3
+		for (ISingleResult element : toIterable(left)) {						//4
+			envs.nested(element, store); 										//4.1, 4.2
+
+			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
 			IBagResult cartesian = new CartesianProduct(element, rightRes).getResult();	//4.5
 			dotRes.add(cartesian);										//4.6
 			envs.pop();
@@ -516,11 +556,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitLessOrEqualThanExpression(ILessOrEqualThanExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberBooleanCalculator(store, left, right) {
 			@Override
@@ -544,11 +583,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitLessThanExpression(ILessThanExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberBooleanCalculator(store, left, right) {
 			@Override
@@ -572,11 +610,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitMinusExpression(IMinusExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
-		
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
+
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberCalculator(store, left, right) {
 			@Override
@@ -600,20 +637,19 @@ public class Interpreter implements IInterpreter {
 	public void visitMinusSetExpression(IMinusSetExpression expr) {
 		IBagResult result = new BagResult();		//1
 
-		expr.getLeftExpression().accept(this);		//2
-		expr.getRightExpression().accept(this);		//2
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());	//2
 
-		IAbstractQueryResult right = qres.pop();	//3
-		IAbstractQueryResult left = qres.pop();		//3
+		IAbstractQueryResult left = executor.get(0);	//3
+		IAbstractQueryResult right = executor.get(1);	//3
 
-		left = InterpreterUtils.deRefrence(left, store);
-		right = InterpreterUtils.deRefrence(right, store);
+		left = deRefrence(left, store);
+		right = deRefrence(right, store);
 
-		for(ISingleResult res1 : InterpreterUtils.toBag(left).getElements()) {			//4
+		for(ISingleResult res1 : toIterable(left)) {			//4
 			boolean canAdd = true;
-			for(ISingleResult res2 : InterpreterUtils.toBag(right).getElements()) {
+			for(ISingleResult res2 : toIterable(right)) {
 				if(res1.equals(res2)) {
-					canAdd = true;
+					canAdd = false;
 					break;
 				}
 			}
@@ -640,11 +676,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitModuloExpression(IModuloExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberCalculator(store, left, right) {
 			@Override
@@ -668,11 +703,10 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitMultiplyExpression(IMultiplyExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
 		qres.push(new NumberCalculator(store, left, right) {
 			@Override
@@ -695,10 +729,10 @@ public class Interpreter implements IInterpreter {
 	@Override	//TODO
 	public void visitOrderByExpression(IOrderByExpression expr) {
 //		expr.getLeftExpression().accept(this);
-//		IBagResult leftBag = InterpreterUtils.toBag(qres.pop());
+//		IBagResult leftBag = toBag(qres.pop());
 //
 //		expr.getRightExpression().accept(this);
-//		IBagResult rightBag = InterpreterUtils.toBag(qres.pop());
+//		IBagResult rightBag = toBag(qres.pop());
 //
 //		List<String> sortOrders = Lists.newArrayList();
 //		for(ISingleResult orderBy : rightBag.getElements()) {
@@ -715,17 +749,16 @@ public class Interpreter implements IInterpreter {
 
 	@Override	//DONE
 	public void visitOrExpression(IOrExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
-		left = InterpreterUtils.toSingleResult(left);
-		left = InterpreterUtils.deRefrence(left, store);
+		left = toSingleResult(left);
+		left = deRefrence(left, store);
 
-		right = InterpreterUtils.toSingleResult(right);
-		right = InterpreterUtils.deRefrence(right, store);
+		right = toSingleResult(right);
+		right = deRefrence(right, store);
 
 		if(left instanceof IBooleanResult && right instanceof IBooleanResult) {
 			qres.push(new BooleanResult(((IBooleanResult) left).getValue().booleanValue() || ((IBooleanResult) right).getValue().booleanValue()));
@@ -776,14 +809,13 @@ public class Interpreter implements IInterpreter {
 	public void visitUnionExpression(IUnionExpression expr) {
 		IBagResult result = new BagResult();		//1
 
-		expr.getLeftExpression().accept(this);		//2
-		expr.getRightExpression().accept(this);		//2
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();	//3
-		IAbstractQueryResult left = qres.pop();		//3
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
-		result.getElements().addAll(InterpreterUtils.toBag(left).getElements());	//4
-		result.getElements().addAll(InterpreterUtils.toBag(right).getElements());	//4
+		Iterables.addAll(result.getElements(), toIterable(left));	//4
+		Iterables.addAll(result.getElements(), toIterable(right));	//4
 
 		qres.push(result);							//5
 	}
@@ -808,14 +840,14 @@ public class Interpreter implements IInterpreter {
 	public void visitWhereExpression(IWhereExpression expr) {
 		expr.getLeftExpression().accept(this);
 		IAbstractQueryResult left = qres.pop();
-		IBagResult leftBag = InterpreterUtils.toBag(left);
+
 		BagResult whereRes = new BagResult();
-		for (ISingleResult element : leftBag.getElements()) {
+		for (ISingleResult element : toIterable(left)) {
 			envs.nested(element, store);
 			expr.getRightExpression().accept(this);
 			IAbstractQueryResult rightRes = qres.pop();
-			rightRes = InterpreterUtils.toSingleResult(rightRes);
-			rightRes = InterpreterUtils.deRefrence(rightRes, store);
+			rightRes = toSingleResult(rightRes);
+			rightRes = deRefrence(rightRes, store);
 			if(rightRes instanceof IBooleanResult) {
 				boolean val = ((IBooleanResult)rightRes).getValue();
 				if(val) {
@@ -840,17 +872,16 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitXORExpression(IXORExpression expr) {
-		expr.getLeftExpression().accept(this);
-		expr.getRightExpression().accept(this);
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
 
-		IAbstractQueryResult right = qres.pop();
-		IAbstractQueryResult left = qres.pop();
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
 
-		left = InterpreterUtils.toSingleResult(left);
-		left = InterpreterUtils.deRefrence(left, store);
+		left = toSingleResult(left);
+		left = deRefrence(left, store);
 
-		right = InterpreterUtils.toSingleResult(right);
-		right = InterpreterUtils.deRefrence(right, store);
+		right = toSingleResult(right);
+		right = deRefrence(right, store);
 
 		if(left instanceof IBooleanResult && right instanceof IBooleanResult) {
 			boolean first = ((IBooleanResult) left).getValue().booleanValue();
@@ -904,12 +935,8 @@ public class Interpreter implements IInterpreter {
 	public void visitBagExpression(IBagExpression expr) {
 		IBagResult result = new BagResult();
 
-		IAbstractQueryResult res = eval(expr);
-		IBagResult bag = InterpreterUtils.toBag(res);
-		//pacz na visitStructExpression
-		for(ISingleResult r : bag.getElements()) {
-			result.getElements().add(r);
-		}
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
+		Iterables.addAll(result.getElements(), toIterable(res));
 
 		qres.push(result);
 	}
@@ -926,14 +953,14 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitCountExpression(ICountExpression expr) {
-		IAbstractQueryResult res = eval(expr.getInnerExpression());
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 
 		qres.push(new NumberAggregation(store, res) {
 			private double count = 0.0;
 
 			@Override
 			protected void aggregateSingle(double number) {
-				count += number;
+				count++;
 			}
 
 			@Override
@@ -955,7 +982,7 @@ public class Interpreter implements IInterpreter {
 
 	@Override	//DONE
 	public void visitMaxExpression(IMaxExpression expr) {
-		IAbstractQueryResult res = eval(expr.getInnerExpression());
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 
 		qres.push(new NumberAggregation(store, res) {
 			private double max = Double.MIN_VALUE;
@@ -976,7 +1003,7 @@ public class Interpreter implements IInterpreter {
 
 	@Override	//DONE
 	public void visitMinExpression(IMinExpression expr) {
-		IAbstractQueryResult res = eval(expr.getInnerExpression());
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 
 		qres.push(new NumberAggregation(store, res) {
 			private double min = Double.MAX_VALUE;
@@ -997,9 +1024,9 @@ public class Interpreter implements IInterpreter {
 
 	@Override	//DONE
 	public void visitNotExpression(INotExpression expr) {
-		IAbstractQueryResult res = eval(expr);
-		res = InterpreterUtils.toSingleResult(res);
-		res = InterpreterUtils.deRefrence(res, store);
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
+		res = toSingleResult(res);
+		res = deRefrence(res, store);
 
 		if(res instanceof IBooleanResult) {
 			qres.push(new BooleanResult(!((IBooleanResult) res).getValue().booleanValue()));
@@ -1024,8 +1051,7 @@ public class Interpreter implements IInterpreter {
 		IAbstractQueryResult res = eval(expr);			//2,3
 
 		//jeden pies czy dodam do bag'a czy do sekwencji. skoro na koniec i tak londuje w bagu...
-		IBagResult bagResult = InterpreterUtils.toBag(res);	//4
-		result.getElements().addAll(bagResult.getElements());
+		Iterables.addAll(result.getElements(), toIterable(res));	//4
 
 		qres.push(result);
 	}
@@ -1044,7 +1070,7 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//DONE
 	public void visitSumExpression(ISumExpression expr) {
-		IAbstractQueryResult res = eval(expr.getInnerExpression());
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 
 		qres.push(new NumberAggregation(store, res) {
 			private double sum = 0.0;
@@ -1065,12 +1091,12 @@ public class Interpreter implements IInterpreter {
 	public void visitUniqueExpression(IUniqueExpression expr) {
 		IBagResult result = new BagResult();		//1
 
-		IAbstractQueryResult res = eval(expr);
+		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
 
-		res = InterpreterUtils.deRefrence(res, store);
+		res = deRefrence(res, store);
 
 		Set<ISingleResult> set = Sets.newHashSet();
-		for(ISingleResult element : InterpreterUtils.toBag(res).getElements()) {
+		for(ISingleResult element : toIterable(res)) {
 			set.add(element);
 		}
 

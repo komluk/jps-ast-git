@@ -8,6 +8,8 @@ import edu.pjwstk.jps.result.ISingleResult;
 import pl.edu.pjwstk.jps.result.DoubleResult;
 import pl.edu.pjwstk.jps.result.IntegerResult;
 
+import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toIterable;
+
 /**
  * User: pawel
  * Date: 30.12.12
@@ -23,7 +25,7 @@ abstract class NumberAggregation {
 	}
 
 	public ISingleResult aggregate() {
-		for(ISingleResult single : InterpreterUtils.toBag(result).getElements()) {
+		for(ISingleResult single : toIterable(result)) {
 			if(performDereference()) {
 				single = (ISingleResult) InterpreterUtils.deRefrence(single, store);
 			}

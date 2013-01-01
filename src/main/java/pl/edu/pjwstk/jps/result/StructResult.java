@@ -32,4 +32,21 @@ public class StructResult extends SingleResult implements IStructResult {
 	protected void toString(ToStringHelper helper) {
 		helper.add("elements", elements);
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		StructResult that = (StructResult) o;
+
+		if (elements != null ? !elements.equals(that.elements) : that.elements != null) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		return elements != null ? elements.hashCode() : 0;
+	}
 }

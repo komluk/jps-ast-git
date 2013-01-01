@@ -7,5 +7,4 @@ public class BooleanResult extends SimpleResult<Boolean> implements IBooleanResu
 	public BooleanResult(Boolean value) {
 		super(value);
 	}
-
 }

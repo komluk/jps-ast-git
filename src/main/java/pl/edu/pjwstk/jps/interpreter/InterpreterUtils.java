@@ -8,6 +8,8 @@ import edu.pjwstk.jps.ast.binary.IDotExpression;
 import edu.pjwstk.jps.interpreter.envs.IInterpreter;
 import edu.pjwstk.jps.interpreter.qres.IQResStack;
 
+import java.util.Arrays;
+
 final class InterpreterUtils {
 	private InterpreterUtils() {}
 	
@@ -59,12 +61,35 @@ final class InterpreterUtils {
 		return ref;
 	}
 	
-	public static IBagResult toBag(IAbstractQueryResult queryResult) {
+//	public static IBagResult toBag(IAbstractQueryResult queryResult) {
+//		if(queryResult instanceof IBagResult) {
+//			return (IBagResult)queryResult;
+//		} else if(queryResult instanceof ISingleResult){
+//			ISingleResult singleRes = (ISingleResult) queryResult;
+//			return new BagResult(singleRes);
+//		} else if(queryResult instanceof IStructResult) {
+//			BagResult bag = new BagResult();
+//			for(ISingleResult single : ((IStructResult) queryResult).elements()) {
+//				bag.add(single);
+//			}
+//			return bag;
+//		} else {
+//			throw new IllegalStateException("Only SingleResults are supported but was: " + queryResult.getClass());
+//		}
+//	}
+
+	public static Iterable<ISingleResult> toIterable(IAbstractQueryResult queryResult) {
 		if(queryResult instanceof IBagResult) {
-			return (IBagResult)queryResult;
+			if(((IBagResult) queryResult).getElements().size() == 1) {
+				return toIterable(((IBagResult) queryResult).getElements().iterator().next());
+			} else {
+				return ((IBagResult)queryResult).getElements();
+			}
+		} else if(queryResult instanceof IStructResult) {
+			return ((IStructResult) queryResult).elements();
 		} else if(queryResult instanceof ISingleResult){
 			ISingleResult singleRes = (ISingleResult) queryResult;
-			return new BagResult(singleRes);
+			return Arrays.asList(singleRes);
 		} else {
 			throw new IllegalStateException("Only SingleResults are supported but was: " + queryResult.getClass());
 		}

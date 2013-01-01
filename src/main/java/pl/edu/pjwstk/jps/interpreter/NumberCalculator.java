@@ -36,33 +36,35 @@ abstract class NumberCalculator {
 	}
 
 	public ISimpleResult<?> calculate() {
+		double result = 0;
 		if(left instanceof IIntegerResult && right instanceof IIntegerResult) {
 			IIntegerResult leftInt = (IIntegerResult) left;
 			IIntegerResult rightInt = (IIntegerResult) right;
 
-			double res = calculate(leftInt.getValue().intValue(), rightInt.getValue().intValue());
-			if(res == (int)res) {
-				return new IntegerResult((int)res);
-			} else {
-				return new DoubleResult(res);
-			}
+			result = calculate(leftInt.getValue().intValue(), rightInt.getValue().intValue());
 		} else if(left instanceof IDoubleResult && right instanceof IIntegerResult) {
 			IDoubleResult leftDouble = (IDoubleResult) left;
 			IDoubleResult rightDouble = new DoubleResult(((IIntegerResult) right).getValue());
 
-			return new DoubleResult(calculate(leftDouble.getValue().doubleValue(), rightDouble.getValue().doubleValue()));
+			result = calculate(leftDouble.getValue().doubleValue(), rightDouble.getValue().doubleValue());
 		} else if(left instanceof  IIntegerResult && right instanceof IDoubleResult) {
 			IDoubleResult leftDouble = new DoubleResult(((IIntegerResult) left).getValue());
 			IDoubleResult rightDouble = (IDoubleResult) right;
 
-			return new DoubleResult(calculate(leftDouble.getValue().doubleValue(), rightDouble.getValue().doubleValue()));
+			result = calculate(leftDouble.getValue().doubleValue(), rightDouble.getValue().doubleValue());
 		} else if(left instanceof  IDoubleResult && right instanceof IDoubleResult) {
 			IDoubleResult leftDouble = (IDoubleResult) left;
 			IDoubleResult rightDouble = (IDoubleResult) right;
 
-			return new DoubleResult(calculate(leftDouble.getValue().doubleValue(), rightDouble.getValue().doubleValue()));
+			result = calculate(leftDouble.getValue().doubleValue(), rightDouble.getValue().doubleValue());
 		} else {
 			throw new IllegalStateException("Can not execute minus expression on: " + left.getClass() + " and " + right.getClass());
+		}
+
+		if(result == (int)result) {
+			return new IntegerResult((int)result);
+		} else {
+			return new DoubleResult(result);
 		}
 	}
 
