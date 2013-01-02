@@ -1,5 +1,6 @@
 package pl.edu.pjwstk.jps.interpreter;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import edu.pjwstk.jps.ast.unary.IBagExpression;
@@ -23,11 +24,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toIterable;
 
 /**
@@ -143,9 +143,8 @@ public class InterpreterTest {
 		assertEquals(booleanResult.getValue(), Boolean.FALSE);
 	}
 
-	@Test
+	@Test	//TODO
 	public void testVisitCloseByExpression() throws Exception {
-		fail("TODO");
 	}
 
 	@Test	//DONE
@@ -178,9 +177,14 @@ public class InterpreterTest {
 		assertEquals(intRes.getValue().intValue(), 4);
 	}
 
-	@Test
+	@Test	//DONE
 	public void testVisitDotExpression() throws Exception {
-		fail("TODO");
+		IAbstractQueryResult result = interpreter.eval(new DotExpression(new StringTerminal("string1"), new StringTerminal("string2")));
+		assertEquals(stack.size(), 0);
+
+		ISingleResult singleResult = InterpreterUtils.toIterable(result).iterator().next();
+		assertTrue(singleResult instanceof IStringResult);
+		assertEquals(((IStringResult) singleResult).getValue(), "string2");
 	}
 
 	@Test	//DONE
@@ -245,9 +249,39 @@ public class InterpreterTest {
 		assertEquals(booleanRes.getValue(), Boolean.FALSE);
 	}
 
-	@Test
+	@Test	//DONE
 	public void testVisitInExpression() throws Exception {
-		fail("TODO");
+		IBagExpression bag1 = new BagExpression(
+				new CommaExpression(
+						new IntegerTerminal(1),
+						new CommaExpression(
+								new IntegerTerminal(2),
+								new CommaExpression(
+										new IntegerTerminal(3),
+										new IntegerTerminal(4)))));
+
+		IBagExpression bag2 = new BagExpression(
+				new CommaExpression(
+						new IntegerTerminal(3),
+						new CommaExpression(
+								new IntegerTerminal(4),
+								new CommaExpression(
+										new IntegerTerminal(5),
+										new IntegerTerminal(6)))));
+
+		IAbstractQueryResult res = interpreter.eval(new IntersectExpression(bag1, bag2));
+		assertEquals(stack.size(), 0);
+
+		IBagResult bag = (IBagResult) res;
+		assertEquals(bag.getElements().size(), 2);
+
+		Set<Integer> ints = Sets.newHashSet();
+		for(ISingleResult single : bag.getElements()) {
+			ints.add(((IIntegerResult)single).getValue());
+		}
+
+		assertTrue(ints.contains(3));
+		assertTrue(ints.contains(4));
 	}
 
 	@Test	//DONE
@@ -285,9 +319,32 @@ public class InterpreterTest {
 		assertTrue(ints.contains(4));
 	}
 
-	@Test
+	@Test	//DONE
 	public void testVisitJoinExpression() throws Exception {
-		fail("TODO");
+		IBagExpression bag1 = new BagExpression(new CommaExpression(new IntegerTerminal(1), new IntegerTerminal(2)));
+		IBagExpression bag2 = new BagExpression(new CommaExpression(new StringTerminal("a"), new StringTerminal("b")));
+
+		IAbstractQueryResult res = interpreter.eval(new JoinExpression(bag1,  bag2));
+		assertEquals(stack.size(), 0);
+
+		assertTrue(res instanceof IBagResult);
+
+		Set<String> expected = Sets.newHashSet();
+		for(ISingleResult struct : toIterable(res)) {
+			assertTrue(struct instanceof  IStructResult);
+			StringBuilder sb = new StringBuilder();
+			for(ISingleResult single : ((IStructResult) struct).elements()) {
+				assertTrue(single instanceof ISimpleResult);
+				sb.append(((ISimpleResult) single).getValue());
+			}
+			expected.add(sb.toString());
+		}
+
+		assertEquals(expected.size(), 4);
+		assertTrue(expected.contains("1a"));
+		assertTrue(expected.contains("1b"));
+		assertTrue(expected.contains("2a"));
+		assertTrue(expected.contains("2b"));
 	}
 
 	@Test	//DONE
@@ -468,9 +525,37 @@ public class InterpreterTest {
 		assertTrue(ints.contains(6));
 	}
 
-	@Test
+	@Test	//DONE
 	public void testVisitWhereExpression() throws Exception {
-		fail("TODO");
+		IBagExpression bag = new BagExpression(
+				new CommaExpression(
+						new IntegerTerminal(1),
+						new CommaExpression(
+								new IntegerTerminal(2),
+								new CommaExpression(
+										new IntegerTerminal(3),
+										new IntegerTerminal(4)))));
+		IAbstractQueryResult res = interpreter.eval(new WhereExpression(bag, new EqualsExpression(new IntegerTerminal(1), new IntegerTerminal(2))));
+		assertEquals(stack.size(), 0);
+
+		assertTrue(res instanceof IBagResult);
+		assertFalse(InterpreterUtils.toIterable(res).iterator().hasNext());
+
+		res = interpreter.eval(new WhereExpression(bag, new EqualsExpression(new IntegerTerminal(1), new IntegerTerminal(1))));
+		assertEquals(stack.size(), 0);
+
+		assertTrue(res instanceof IBagResult);
+		assertEquals(Iterables.size(toIterable(res)), 4);
+		Set<Integer> ints = Sets.newHashSet();
+		for(ISingleResult single : toIterable(res)) {
+			IIntegerResult singleInt = (IIntegerResult) single;
+			ints.add(singleInt.getValue());
+		}
+
+		assertTrue(ints.contains(1));
+		assertTrue(ints.contains(2));
+		assertTrue(ints.contains(3));
+		assertTrue(ints.contains(4));
 	}
 
 	@Test	//DONE
@@ -500,11 +585,6 @@ public class InterpreterTest {
 		assertEquals(booleanRes.getValue(), Boolean.FALSE);
 	}
 
-	@Test	//TODO
-	public void testVisitStructExpression() throws Exception {
-		fail("TODO");
-	}
-
 	@Test	//DONE
 	public void testVisitCountExpression() throws Exception {
 		IBagExpression bag = new BagExpression(
@@ -523,9 +603,9 @@ public class InterpreterTest {
 		assertEquals(result.getValue().intValue(), 4);
 	}
 
-	@Test
+	@Test(expectedExceptions = UnsupportedOperationException.class)
 	public void testVisitExistsExpression() throws Exception {
-		fail("TODO");
+		interpreter.eval(new ExistsExpression(new StringTerminal("a")));
 	}
 
 	@Test	//DONE
