@@ -1,7 +1,6 @@
 package pl.edu.pjwstk.jps.interpreter;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import edu.pjwstk.jps.ast.unary.IBagExpression;
 import edu.pjwstk.jps.datastore.ISBAStore;
@@ -18,15 +17,11 @@ import pl.edu.pjwstk.jps.ast.terminal.StringTerminal;
 import pl.edu.pjwstk.jps.ast.unary.*;
 import pl.edu.pjwstk.jps.interpreter.envs.ENVS;
 import pl.edu.pjwstk.jps.qres.interpreter.QResStack;
-import pl.edu.pjwstk.jps.result.BagResult;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
-import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.testng.Assert.*;
 import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toIterable;
 
