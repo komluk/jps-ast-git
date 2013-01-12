@@ -5,11 +5,21 @@
 	<artifactId>ast</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
+	<properties>
+		<libGroup>pl.edu.pjwstk.jps.lib</libGroup>
+
+		<javaCup_version>1.0</javaCup_version>
+		<javaCup_id>java-cup</javaCup_id>
+
+		<jpsApi_version>1.0.3</jpsApi_version>
+		<jpsApi_id>jps-api</jpsApi_id>
+	</properties>
+
 	<dependencies>
 		<dependency>
-			<groupId>pl.edu.pjwstk.jps</groupId>
-			<artifactId>jps-api</artifactId>
-			<version>[1.0.3]</version>
+			<groupId>${libGroup}</groupId>
+			<artifactId>${jpsApi_id}</artifactId>
+			<version>[${jpsApi_version}]</version>
 		</dependency>
 
 		<dependency>
@@ -30,19 +40,17 @@
 			<version>1.0.6</version>
 		</dependency>
 
-		<!--
 		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.4</version>
+			<groupId>de.jflex</groupId>
+			<artifactId>jflex</artifactId>
+			<version>1.4.3</version>
 		</dependency>
 
 		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.6</version>
+			<groupId>${libGroup}</groupId>
+			<artifactId>${javaCup_id}</artifactId>
+			<version>[${javaCup_version}]</version>
 		</dependency>
-		-->
 
 		<dependency>
 			<groupId>org.testng</groupId>
@@ -92,6 +100,42 @@
 		</testResources>
 
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<inherited>false</inherited>
+				<executions>
+					<execution>
+						<id>jps-api install</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>src/main/resources/dependency/jps-api_1.0.3.jar</file>
+							<groupId>${libGroup}</groupId>
+							<artifactId>${jpsApi_id}</artifactId>
+							<version>${jpsApi_version}</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+					<execution>
+						<id>java-cup install</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>src/main/resources/dependency/java-cup-11a.jar</file>
+							<groupId>${libGroup}</groupId>
+							<artifactId>${javaCup_id}</artifactId>
+							<version>${javaCup_version}</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
