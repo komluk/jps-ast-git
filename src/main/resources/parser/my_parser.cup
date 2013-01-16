@@ -1,0 +1,137 @@
+package pl.edu.pjwstk.jps.parser;
+ 
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import java_cup.runtime.DefaultSymbolFactory;
+import java_cup.runtime.Symbol;
+import pl.edu.pjwstk.jps.ast.binary.*;
+import pl.edu.pjwstk.jps.ast.*;
+import pl.edu.pjwstk.jps.ast.terminal.*;
+import pl.edu.pjwstk.jps.ast.unary.*;
+
+parser code {: 
+	public Lexer lexer;
+	private String expr;
+	public AbstractExpression RESULT;
+	
+	public JpsParser(String expr) {
+		this.symbolFactory = new DefaultSymbolFactory();   
+		this.expr = expr;
+	}
+	
+	void setResult(AbstractExpression exp) {
+		this.RESULT = exp;
+	}  
+
+:};
+
+init with {: 	    lexer = new Lexer(new StringReader(expr)); :};
+scan with {:		return lexer.next_token(); :};
+
+terminal String PLUS;
+terminal String MINUS;
+terminal String MULTIPLY; 
+terminal String DIVIDE;
+terminal String MODULO;
+
+terminal String NOT;
+terminal String AND;
+terminal String OR;
+terminal String XOR;
+
+terminal String EQ;
+terminal String NOT_EQ;
+terminal String LESS_THAN;
+terminal String LESS_EQ_THAN;
+terminal String MORE_THAN;
+terminal String MORE_EQ_THAN;
+
+terminal String SUM;
+terminal String AVG;
+terminal String COUNT;
+terminal String MAX;
+terminal String MIN;
+
+terminal String COMMA;
+
+terminal String LEFT_ROUND_BRACKET;
+terminal String RIGHT_ROUND_BRACKET;
+
+terminal Integer INTEGER_LITERAL;
+terminal Double DOUBLE_LITERAL;
+terminal Boolean BOOLEAN_LITERAL;
+terminal String STRING_LITERAL;
+terminal String IDENTIFIER;
+
+non terminal AbstractExpression goal;
+non terminal AbstractExpression expr;
+
+/*
+W przypadku operatorów SBQL mamy następujące priorytety (im niżej, tym wyższy priorytet):
+WHERE, JOIN;
+FORALL, FORANY;
+	NOT;
+UNION, IN;
+ORDER_BY, CLOSE_BY;
+	COMMA;
+	OR, AND, XOR;
+	EQUALS, NOT_EQUALS, MORE, LESS, MORE_OR_EQUAL, LESS_OR_EQUAL;
+	PLUS, MINUS;
+	MULTIPLY, DIVIDE, MODULO;
+AS, GROUP_AS;
+	SUM,COUNT, AVG, MIN, MAX,
+UNIQUE, EXISTS, MINUS_FUNCTION, INTERSECT;
+DOT;
+BAG, SEQUENCE, STRUCT;
+*/
+
+precedence left NOT;
+
+precedence left COMMA;
+
+precedence left XOR, AND, OR;
+precedence left EQ, NOT_EQ, MORE_THAN, LESS_THAN, MORE_EQ_THAN, LESS_EQ_THAN;
+
+precedence left PLUS, MINUS;
+precedence left MULTIPLY, DIVIDE, MODULO;
+
+precedence left SUM, COUNT, AVG, MIN, MAX;
+
+precedence left LEFT_ROUND_BRACKET, RIGHT_ROUND_BRACKET;
+
+start with goal;
+
+goal ::= expr:e		{: RESULT = e; parser.setResult(e); :} ;
+
+expr  ::=
+		expr:e1 PLUS:o      expr:e2	{: RESULT = new PlusExpression(e1, e2); :}
+	| 	expr:e1 MINUS:o     expr:e2	{: RESULT = new MinusExpression(e1, e2); :}
+	| 	expr:e1 MULTIPLY:o 	expr:e2	{: RESULT = new MultiplyExpression(e1, e2); :}
+	| 	expr:e1 DIVIDE:o	expr:e2	{: RESULT = new DivideExpression(e1, e2); :}
+	|   expr:e1 MODULO:o    expr:e2    {: RESULT = new ModuloExpression(e1, e2); :}
+
+	|   expr:e1 AND:o          expr:e2    {: RESULT = new AndExpression(e1, e2); :}
+	|   expr:e1 OR:o           expr:e2    {: RESULT = new OrExpression(e1, e2); :}
+	|   expr:e1 XOR:o          expr:e2    {: RESULT = new XORExpression(e1, e2); :}
+	|   NOT:o                  expr:e     {: RESULT = new NotExpression(e); :}
+	|   expr:e1 EQ:o           expr:e2    {: RESULT = new EqualsExpression(e1, e2); :}
+	|   expr:e1 NOT_EQ:o       expr:e2    {: RESULT = new NotEqualsExpression(e1, e2); :}
+	|   expr:e1 LESS_THAN:o    expr:e2    {: RESULT = new LessThanExpression(e1, e2); :}
+	|   expr:e1 MORE_THAN:o    expr:e2    {: RESULT = new MoreThanExpression(e1, e2); :}
+	|   expr:e1 LESS_EQ_THAN:o expr:e2    {: RESULT = new LessOrEqualThanExpression(e1, e2); :}
+	|   expr:e1 MORE_EQ_THAN:o expr:e2    {: RESULT = new MoreOrEqualThanExpression(e1, e2); :}
+
+	|   expr:e1 COMMA:o  expr:e2    {: RESULT = new CommaExpression(e1, e2); :}
+	|   SUM:o            expr:e     {: RESULT = new SumExpression(e); :}
+	|   COUNT:o          expr:e     {: RESULT = new CountExpression(e); :}
+	|   AVG:o            expr:e     {: RESULT = new AvgExpression(e); :}
+	|   MIN:o            expr:e     {: RESULT = new MinExpression(e); :}
+	|   MAX:o            expr:e     {: RESULT = new MaxExpression(e); :}
+
+	| 	INTEGER_LITERAL:o  {: RESULT = new IntegerTerminal((Integer)o); :}
+	|   DOUBLE_LITERAL:o   {: RESULT = new DoubleTerminal((Double)o);   :}
+	|   BOOLEAN_LITERAL:o  {: RESULT = new BooleanTerminal((Boolean)o); :}
+	|	LEFT_ROUND_BRACKET:o expr:e1 RIGHT_ROUND_BRACKET {: RESULT = e1; :}
+	;
