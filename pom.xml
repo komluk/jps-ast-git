@@ -136,6 +136,52 @@
 				</executions>
 			</plugin>
 
+			<!--<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.1</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<configuration>
+							<tasks>
+								<java jar="src/main/resources/dependency/jflex-1.4.3.jar" fork="true" failonerror="true">
+								<arg path="src/main/resources/lexer.lex" />
+								<arg value="- -nobak" />	//FIXME
+								<arg line="-d $parser" />
+								</java>
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.1</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<configuration>
+							<tasks>
+								<java jar="src/main/resources/dependency/java-cup-11a.jar" fork="true" failonerror="true">
+									<arg line="-symbols Symbols" />
+									<arg line="-parser SBQLParser" />
+									<arg line="-interface" />
+									<arg line="-destdir parser" />
+									<arg path="src/main/resources/parser.cup" />
+								</java>
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>-->
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

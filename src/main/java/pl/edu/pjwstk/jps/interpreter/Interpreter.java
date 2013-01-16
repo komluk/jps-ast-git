@@ -12,6 +12,8 @@ import edu.pjwstk.jps.ast.unary.*;
 import edu.pjwstk.jps.datastore.ISBAStore;
 import edu.pjwstk.jps.interpreter.envs.IInterpreter;
 import edu.pjwstk.jps.result.*;
+import pl.edu.pjwstk.jps.ast.binary.MoreOrEqualThanExpression;
+import pl.edu.pjwstk.jps.ast.binary.MoreThanExpression;
 import pl.edu.pjwstk.jps.interpreter.envs.ENVS;
 import pl.edu.pjwstk.jps.qres.interpreter.QResStack;
 import pl.edu.pjwstk.jps.result.*;
@@ -569,6 +571,18 @@ public class Interpreter implements IInterpreter {
 		}.calculate());
 	}
 
+	public void visitMoreOrEqualExpression(MoreOrEqualThanExpression expr) {
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
+
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
+		qres.push(new NumberBooleanCalculator(store, left, right) {
+			@Override
+			protected boolean calculate(double firstNumber, double secondNumber) {
+				return firstNumber >= secondNumber;
+			}
+		}.calculate());
+	}
 	/**
 	 * tradycyjne binarne operatory arytmetyczne, logiczne i porownania.
 	 * Ewaluacja:
@@ -592,6 +606,19 @@ public class Interpreter implements IInterpreter {
 			@Override
 			protected boolean calculate(double firstNumber, double secondNumber) {
 				return firstNumber < secondNumber;
+			}
+		}.calculate());
+	}
+
+	public void visitMoreThanExpression(MoreThanExpression expr) {
+		ExpressionExecutor executor = new ExpressionExecutor(expr.getLeftExpression(), expr.getRightExpression());
+
+		IAbstractQueryResult left = executor.get(0);
+		IAbstractQueryResult right = executor.get(1);
+		qres.push(new NumberBooleanCalculator(store, left, right) {
+			@Override
+			protected boolean calculate(double firstNumber, double secondNumber) {
+				return firstNumber > secondNumber;
 			}
 		}.calculate());
 	}
@@ -728,6 +755,7 @@ public class Interpreter implements IInterpreter {
 	 */
 	@Override	//TODO
 	public void visitOrderByExpression(IOrderByExpression expr) {
+
 //		expr.getLeftExpression().accept(this);
 //		IBagResult leftBag = toBag(qres.pop());
 //

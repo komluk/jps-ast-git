@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Calc" default="generate">
+	<property name="CLASSPATH" value="bin;lib/jflex-1.4.3.jar;lib/java-cup-1.0.jar;"/>
+
+	<taskdef name="jflex" classname="JFlex.anttask.JFlexTask" classpath="${CLASSPATH}"/>
+	<taskdef name="cup" classname="java_cup.anttask.CUPTask" classpath="${CLASSPATH}"/>
+
+	<target name="clean">
+		<delete dir="src/main/java/pl/edu/pjwstk/jps/parser" />
+	</target>
+
+	<target name="generate" depends="clean">
+		<jflex destdir="src/main/java/" file="src/main/resources/parser/my_lexer.lex" nobak="true"/>
+		<cup destdir="src/main/java/" interface="true"
+			 package="pl.edu.pjwstk.jps.parser" symbols="Symbols" parser="JpsParser"
+			 srcfile="src/main/resources/parser/my_parser.cup" />
+	</target>
+</project>
