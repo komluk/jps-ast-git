@@ -22,4 +22,12 @@ abstract class AbstractBinaryExpression extends AbstractExpression implements IB
 	public IExpression getRightExpression() {
 		return rightExpression;
 	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" +
+				"leftExpression=" + leftExpression +
+				", rightExpression=" + rightExpression +
+				'}';
+	}
 }

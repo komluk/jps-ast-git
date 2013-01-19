@@ -3,6 +3,7 @@ package pl.edu.pjwstk.jps.parser;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import pl.edu.pjwstk.jps.ast.AbstractExpression;
+import pl.edu.pjwstk.jps.result.AbstractQueryResult;
 import pl.edu.pjwstk.jps.result.BooleanResult;
 
 import static org.testng.Assert.assertFalse;
@@ -76,11 +77,11 @@ public class LogicalParserTest extends ParserTest {
 
 	public void notExpressionTest() throws Exception {
 		for(String not : new String[] { "!", "not" }) {
-			AbstractExpression expression = getExpression(not + "true");
+			AbstractExpression expression = getExpression(not + " true");
 			BooleanResult res = getResult(expression, BooleanResult.class);
 			assertFalse(res.getValue());
 
-			expression = getExpression(not + "false");
+			expression = getExpression(not + " false");
 			res = getResult(expression, BooleanResult.class);
 			assertTrue(res.getValue());
 		}

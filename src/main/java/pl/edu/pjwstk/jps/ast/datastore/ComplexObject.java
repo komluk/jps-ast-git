@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 
 import edu.pjwstk.jps.datastore.IComplexObject;
 import edu.pjwstk.jps.datastore.OID;
+import pl.edu.pjwstk.jps.ast.datastore.util.SBAStorePrinter;
 
 public class ComplexObject extends SBAObject implements IComplexObject {
 	private final List<OID> oids = Lists.newArrayList();
@@ -37,6 +38,7 @@ public class ComplexObject extends SBAObject implements IComplexObject {
 
 	@Override
 	protected void toString(ToStringHelper helper) {
-		helper.add("oids", oids);
+		helper.add("oids", oids)
+			.add("xml", "\n" + new SBAStorePrinter(SBAStore.getInstance(), this).toXml() + "\n");
 	}
 }

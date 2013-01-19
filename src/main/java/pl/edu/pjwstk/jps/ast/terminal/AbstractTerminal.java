@@ -14,4 +14,11 @@ abstract class AbstractTerminal<T> extends AbstractExpression implements ITermin
 	public T getValue() {
 		return value;
 	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" +
+				"value=" + value +
+				'}';
+	}
 }

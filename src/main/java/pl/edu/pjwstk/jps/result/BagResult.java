@@ -35,7 +35,7 @@ public class BagResult extends CollectionResult<Collection<ISingleResult>> imple
 	}
 	@Override
 	protected Collection<ISingleResult> initCollection() {
-//		return Lists.newArrayList();
-		return Sets.newHashSet();
+		return Lists.newArrayList();
+//		return Sets.newLinkedHashSet();
 	}
 }

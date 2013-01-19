@@ -1,12 +1,21 @@
 package pl.edu.pjwstk.jps.parser;
 
+import com.google.common.collect.Sets;
+import edu.pjwstk.jps.ast.unary.IBagExpression;
+import edu.pjwstk.jps.result.IBagResult;
+import edu.pjwstk.jps.result.ISingleResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import pl.edu.pjwstk.jps.ast.AbstractExpression;
+import pl.edu.pjwstk.jps.result.BagResult;
 import pl.edu.pjwstk.jps.result.DoubleResult;
 import pl.edu.pjwstk.jps.result.IntegerResult;
 
+import java.util.Set;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * User: pawel
@@ -72,5 +81,41 @@ public class AggregationFunctionTest extends ParserTest {
 		expression = getExpression("max(1,2,(0-3))");
 		res = getResult(expression, IntegerResult.class);
 		assertEquals(res.getValue(), Integer.valueOf(2));
+	}
+
+	public void uniqueExpressionTest() throws Exception {
+		AbstractExpression expression = getExpression("unique(1,1,2,2,3,3)");
+		BagResult res = getResult(expression, BagResult.class);
+		assertEquals(res.getElements().size(), 3);
+		Set<Integer> ints = Sets.newHashSet();
+		for(ISingleResult singleResult : res.getElements()) {
+			assertTrue(singleResult instanceof IntegerResult);
+			ints.add(((IntegerResult) singleResult).getValue());
+		}
+
+		assertEquals(ints, Sets.newHashSet(1, 2, 3));
+	}
+
+	public void minusSetExpressionTest() throws Exception {
+		AbstractExpression expression = getExpression("bag(1,2,3) minus bag(1,2)");
+		BagResult res = getResult(expression, BagResult.class);
+		assertEquals(res.getElements().size(), 1);
+		Set<Integer> ints = Sets.newHashSet();
+		for(ISingleResult singleResult : res.getElements()) {
+			assertTrue(singleResult instanceof IntegerResult);
+			ints.add(((IntegerResult) singleResult).getValue());
+		}
+		assertEquals(ints, Sets.newHashSet(3));
+	}
+
+	public void intersectExpressionTest() throws Exception {
+		AbstractExpression expression = getExpression("bag(1,2) intersect bag(2,3)");
+		BagResult res = getResult(expression, BagResult.class);
+		Set<Integer> ints = Sets.newHashSet();
+		for(ISingleResult singleResult : res.getElements()) {
+			assertTrue(singleResult instanceof IntegerResult);
+			ints.add(((IntegerResult) singleResult).getValue());
+		}
+		assertEquals(ints, Sets.newHashSet(2));
 	}
 }

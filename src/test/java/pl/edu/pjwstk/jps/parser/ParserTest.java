@@ -11,7 +11,7 @@ import pl.edu.pjwstk.jps.result.AbstractQueryResult;
  * Date: 16.01.13
  * Time: 19:41
  */
-@Test
+@Test(sequential = true)
 abstract class ParserTest {
 	protected JpsParser parser;
 	protected Interpreter interpreter;

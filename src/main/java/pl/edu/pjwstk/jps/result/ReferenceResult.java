@@ -4,9 +4,10 @@ import com.google.common.base.Objects.ToStringHelper;
 
 import edu.pjwstk.jps.datastore.OID;
 import edu.pjwstk.jps.result.IReferenceResult;
+import pl.edu.pjwstk.jps.ast.datastore.SBAStore;
 
 public class ReferenceResult extends SingleResult implements IReferenceResult {
-	public final OID oid;
+	private final OID oid;
 
 	public ReferenceResult(OID oid) {
 		this.oid = oid;
@@ -20,6 +21,7 @@ public class ReferenceResult extends SingleResult implements IReferenceResult {
 	@Override
 	protected void toString(ToStringHelper helper) {
 		helper.add("oid", oid);
+		helper.add("object", SBAStore.getInstance().retrieve(getOIDValue()));
 	}
 
 	@Override

@@ -10,6 +10,7 @@ import pl.edu.pjwstk.jps.ast.binary.*;
 import pl.edu.pjwstk.jps.ast.*;
 import pl.edu.pjwstk.jps.ast.terminal.*;
 import pl.edu.pjwstk.jps.ast.unary.*;
+import pl.edu.pjwstk.jps.ast.auxname.*;
 
 parser code {: 
 	public Lexer lexer;
@@ -29,6 +30,15 @@ parser code {:
 
 init with {: 	    lexer = new Lexer(new StringReader(expr)); :};
 scan with {:		return lexer.next_token(); :};
+
+terminal String LEFT_ROUND_BRACKET;
+terminal String RIGHT_ROUND_BRACKET;
+
+terminal Integer INTEGER_LITERAL;
+terminal Double DOUBLE_LITERAL;
+terminal Boolean BOOLEAN_LITERAL;
+terminal String STRING_LITERAL;
+terminal String IDENTIFIER;
 
 terminal String PLUS;
 terminal String MINUS;
@@ -53,53 +63,52 @@ terminal String AVG;
 terminal String COUNT;
 terminal String MAX;
 terminal String MIN;
+terminal String UNIQUE;
+terminal String EXISTS;
+terminal String MINUS_SET;
+terminal String INTERSECT;
+
+terminal String DOT;
 
 terminal String COMMA;
+terminal String BAG;
+terminal String STRUCT;
 
-terminal String LEFT_ROUND_BRACKET;
-terminal String RIGHT_ROUND_BRACKET;
+terminal String UNION;
+terminal String IN;
 
-terminal Integer INTEGER_LITERAL;
-terminal Double DOUBLE_LITERAL;
-terminal Boolean BOOLEAN_LITERAL;
-terminal String STRING_LITERAL;
-terminal String IDENTIFIER;
+terminal String FOR_ALL;
+terminal String FOR_ANY;
+
+terminal String AS;
+terminal String GROUP_AS;
+
+terminal String WHERE;
+terminal String JOIN;
 
 non terminal AbstractExpression goal;
 non terminal AbstractExpression expr;
+non terminal NameTerminal identifier_literal;
 
-/*
-W przypadku operatorów SBQL mamy następujące priorytety (im niżej, tym wyższy priorytet):
-WHERE, JOIN;
-FORALL, FORANY;
-	NOT;
-UNION, IN;
-ORDER_BY, CLOSE_BY;
-	COMMA;
-	OR, AND, XOR;
-	EQUALS, NOT_EQUALS, MORE, LESS, MORE_OR_EQUAL, LESS_OR_EQUAL;
-	PLUS, MINUS;
-	MULTIPLY, DIVIDE, MODULO;
-AS, GROUP_AS;
-	SUM,COUNT, AVG, MIN, MAX,
-UNIQUE, EXISTS, MINUS_FUNCTION, INTERSECT;
-DOT;
-BAG, SEQUENCE, STRUCT;
-*/
-
+precedence left WHERE, JOIN;
+precedence left FOR_ALL, FOR_ANY;
 precedence left NOT;
+precedence left UNION, IN;
 
 precedence left COMMA;
 
-precedence left XOR, AND, OR;
+precedence left IDENTIFIER;
+precedence left OR, AND, XOR;
 precedence left EQ, NOT_EQ, MORE_THAN, LESS_THAN, MORE_EQ_THAN, LESS_EQ_THAN;
-
 precedence left PLUS, MINUS;
 precedence left MULTIPLY, DIVIDE, MODULO;
-
-precedence left SUM, COUNT, AVG, MIN, MAX;
-
+precedence left AS, GROUP_AS;
+precedence left SUM, COUNT, AVG, MIN, MAX, UNIQUE, MINUS_SET, INTERSECT;
 precedence left LEFT_ROUND_BRACKET, RIGHT_ROUND_BRACKET;
+
+precedence left DOT;
+
+precedence left BAG, STRUCT;
 
 start with goal;
 
@@ -108,10 +117,10 @@ goal ::= expr:e		{: RESULT = e; parser.setResult(e); :} ;
 expr  ::=
 		expr:e1 PLUS:o      expr:e2	{: RESULT = new PlusExpression(e1, e2); :}
 	| 	expr:e1 MINUS:o     expr:e2	{: RESULT = new MinusExpression(e1, e2); :}
+	/*|   MINUS:o expr:e              {: RESULT = new MinusExpression(new IntegerTerminal(Integer.valueOf(0)), e); :}*/
 	| 	expr:e1 MULTIPLY:o 	expr:e2	{: RESULT = new MultiplyExpression(e1, e2); :}
 	| 	expr:e1 DIVIDE:o	expr:e2	{: RESULT = new DivideExpression(e1, e2); :}
 	|   expr:e1 MODULO:o    expr:e2    {: RESULT = new ModuloExpression(e1, e2); :}
-
 	|   expr:e1 AND:o          expr:e2    {: RESULT = new AndExpression(e1, e2); :}
 	|   expr:e1 OR:o           expr:e2    {: RESULT = new OrExpression(e1, e2); :}
 	|   expr:e1 XOR:o          expr:e2    {: RESULT = new XORExpression(e1, e2); :}
@@ -122,16 +131,35 @@ expr  ::=
 	|   expr:e1 MORE_THAN:o    expr:e2    {: RESULT = new MoreThanExpression(e1, e2); :}
 	|   expr:e1 LESS_EQ_THAN:o expr:e2    {: RESULT = new LessOrEqualThanExpression(e1, e2); :}
 	|   expr:e1 MORE_EQ_THAN:o expr:e2    {: RESULT = new MoreOrEqualThanExpression(e1, e2); :}
-
 	|   expr:e1 COMMA:o  expr:e2    {: RESULT = new CommaExpression(e1, e2); :}
 	|   SUM:o            expr:e     {: RESULT = new SumExpression(e); :}
 	|   COUNT:o          expr:e     {: RESULT = new CountExpression(e); :}
 	|   AVG:o            expr:e     {: RESULT = new AvgExpression(e); :}
 	|   MIN:o            expr:e     {: RESULT = new MinExpression(e); :}
 	|   MAX:o            expr:e     {: RESULT = new MaxExpression(e); :}
-
+	|   UNIQUE:o         expr:e     {: RESULT = new UniqueExpression(e); :}
+	|   EXISTS:o         expr:e     {: RESULT = new ExistsExpression(e); :}
+	|   expr:e1 MINUS_SET:o  expr:e2  {: RESULT = new MinusSetExpression(e1, e2); :}
+	|   expr:e1 INTERSECT:o  expr:e2  {: RESULT = new IntersectExpression(e1, e2); :}
+	| 	FOR_ALL:o expr:e1 expr:e2	{: RESULT = new ForAllExpression(e1, e2); :}
+	| 	FOR_ANY:o expr:e1 expr:e2	{: RESULT = new ForAnyExpression(e1, e2); :}
+	|   expr:e1 UNION:o  expr:e2  {: RESULT = new UnionExpression(e1, e2); :}
+	|   expr:e1 IN:o  expr:e2  {: RESULT = new InExpression(e1, e2); :}
+	|   expr:e1 WHERE:o  expr:e2  {: RESULT = new WhereExpression(e1, e2); :}
+	|   expr:e1 JOIN:o  expr:e2  {: RESULT = new JoinExpression(e1, e2); :}
+	|   expr:e1 DOT:o  expr:e2 {: RESULT = new DotExpression(e1, e2); :}
+	|   STRUCT:o         expr:e     {: RESULT = new StructExpression(e); :}
+	| 	expr:e1 AS:o IDENTIFIER:i1 {: RESULT = new AsExpression(i1, e1); :}
+    | 	expr:e1 GROUP_AS:o IDENTIFIER:i1 {: RESULT = new GroupAsExpression(i1, e1); :}
+    |	identifier_literal:l		{: RESULT = l; :}
 	| 	INTEGER_LITERAL:o  {: RESULT = new IntegerTerminal((Integer)o); :}
+	|	STRING_LITERAL:o 			{: RESULT = new StringTerminal((String)o); :}
 	|   DOUBLE_LITERAL:o   {: RESULT = new DoubleTerminal((Double)o);   :}
 	|   BOOLEAN_LITERAL:o  {: RESULT = new BooleanTerminal((Boolean)o); :}
 	|	LEFT_ROUND_BRACKET:o expr:e1 RIGHT_ROUND_BRACKET {: RESULT = e1; :}
+	|   BAG:o  expr:e {: RESULT = new BagExpression(e); :}
+	;
+
+identifier_literal	::=
+		IDENTIFIER:o				{: RESULT = new NameTerminal((String)o); :}
 	;

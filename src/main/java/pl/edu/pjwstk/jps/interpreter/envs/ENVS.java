@@ -150,7 +150,7 @@ public class ENVS implements IENVS {
 			}
 		} else if(result instanceof IBinderResult) {	//3.
 			IBinderResult binderResult = (IBinderResult) result;
-			frame.add(new ENVSBinder(binderResult.getName(), binderResult));
+			frame.add(new ENVSBinder(binderResult.getName(), binderResult.getValue()));
 		} else if(result instanceof IStructResult) {	//4.
 			IStructResult struct = (IStructResult) result;
 			for(ISingleResult res : struct.elements()) {

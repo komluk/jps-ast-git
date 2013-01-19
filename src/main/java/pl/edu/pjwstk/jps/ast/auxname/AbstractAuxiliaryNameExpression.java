@@ -23,4 +23,12 @@ abstract class AbstractAuxiliaryNameExpression extends AbstractExpression implem
 	public IExpression getInnerExpression() {
 		return innerExpression;
 	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" +
+				"name='" + name + '\'' +
+				", innerExpression=" + innerExpression +
+				'}';
+	}
 }

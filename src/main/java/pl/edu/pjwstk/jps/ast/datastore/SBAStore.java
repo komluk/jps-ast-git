@@ -98,4 +98,9 @@ public class SBAStore implements ISBAStore {
 	public static SBAStore getInstance() {
 		return instance;
 	}
+
+	public void reset() {
+		db.clear();
+		db.put(root.getOID(), root);
+	}
 }

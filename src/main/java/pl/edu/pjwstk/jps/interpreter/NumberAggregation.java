@@ -1,10 +1,7 @@
 package pl.edu.pjwstk.jps.interpreter;
 
 import edu.pjwstk.jps.datastore.ISBAStore;
-import edu.pjwstk.jps.result.IAbstractQueryResult;
-import edu.pjwstk.jps.result.IDoubleResult;
-import edu.pjwstk.jps.result.IIntegerResult;
-import edu.pjwstk.jps.result.ISingleResult;
+import edu.pjwstk.jps.result.*;
 import pl.edu.pjwstk.jps.result.DoubleResult;
 import pl.edu.pjwstk.jps.result.IntegerResult;
 
@@ -25,7 +22,7 @@ abstract class NumberAggregation {
 	}
 
 	public ISingleResult aggregate() {
-		for(ISingleResult single : toIterable(result)) {
+		for(ISingleResult single : toIterable(result, true)) {
 			if(performDereference()) {
 				single = (ISingleResult) InterpreterUtils.deRefrence(single, store);
 			}
@@ -33,7 +30,7 @@ abstract class NumberAggregation {
 			if(single instanceof IIntegerResult) {
 				aggregateSingle(((IIntegerResult) single).getValue().intValue());
 			} else if(single instanceof IDoubleResult) {
-				aggregateSingle(((IDoubleResult) single).getValue().intValue());
+				aggregateSingle(((IDoubleResult) single).getValue().doubleValue());
 			} else {
 				throw new IllegalStateException("sum can not be applied to " + single.getClass());
 			}

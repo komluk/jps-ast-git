@@ -150,11 +150,7 @@ public class InterpreterTest {
 
 		assertEquals(stack.size(), 0);
 
-		IBagResult bag = (IBagResult) result;
-		assertEquals(bag.getElements().size(), 1);
-
-		Iterator<ISingleResult> it = bag.getElements().iterator();
-		IStructResult struct = (IStructResult) it.next();
+		IStructResult struct = (IStructResult) result;
 
 		assertEquals(struct.elements().size(), 2);
 
@@ -505,7 +501,7 @@ public class InterpreterTest {
 		assertEquals(stack.size(), 0);
 
 		IBagResult bag = (IBagResult) res;
-		assertEquals(bag.getElements().size(), 6);
+		assertEquals(bag.getElements().size(), 8);
 
 		Set<Integer> ints = Sets.newHashSet();
 		for(ISingleResult single : bag.getElements()) {

@@ -23,10 +23,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
-import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.deRefrence;
-import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toIterable;
-import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.toSingleResult;
-import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.equals;
+import static pl.edu.pjwstk.jps.interpreter.InterpreterUtils.*;
 
 /**
  * jeszcze w życiu takiego potwora nie zrobiłem....
@@ -71,7 +68,7 @@ public class Interpreter implements IInterpreter {
 			result.getElements().add(new BinderResult(expr.getAuxiliaryName(), singleResult));
 		}
 
-		qres.push(result);
+		qres.push(tryRemoveBag(result));
 	}
 
 	private class ExpressionExecutor {
@@ -93,9 +90,6 @@ public class Interpreter implements IInterpreter {
 			for(int i = expressions.length - 1; i >= 0; i--) {
 				queryResults[i] = qres.pop();
 			}
-//			for(int i = 0 ; i < expressions.length; i++) {
-//				queryResults[i] = qres.pop();
-//			}
 
 			return this;
 		}
@@ -150,21 +144,24 @@ public class Interpreter implements IInterpreter {
 		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();//2,3
 
 		for (ISingleResult element : toIterable(left)) {					//4
-			envs.nested(element, store);										//4.1, 4.2
+			envs.push(envs.nested(element, store));										//4.1, 4.2
+			try {
+				IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
 
-			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
-
-			IAbstractQueryResult single = toSingleResult(rightRes);
-			if(single instanceof IBooleanResult) {
-				IBooleanResult booleanResult = (IBooleanResult) single;
-				if(!booleanResult.getValue().booleanValue()) {
-					qres.push(new BooleanResult(false));
-					return;	//FIXME brzydal										//4.6
+				IAbstractQueryResult single = toSingleResult(rightRes);
+				single = deRefrence(single, store);
+				if(single instanceof IBooleanResult) {
+					IBooleanResult booleanResult = (IBooleanResult) single;
+					if(!booleanResult.getValue().booleanValue()) {
+						qres.push(new BooleanResult(false));
+						return;	//FIXME brzydal										//4.6
+					}
+				} else {
+					throw new IllegalStateException("Result must be boolean");		////4.5
 				}
-			} else {
-				throw new IllegalStateException("Result must be boolean");		////4.5
+			} finally {
+				envs.pop();
 			}
-			envs.pop();
 		}
 
 		qres.push(new BooleanResult(true));
@@ -194,15 +191,21 @@ public class Interpreter implements IInterpreter {
 		rightRes = toSingleResult(rightRes);	//3
 		rightRes = deRefrence(rightRes, store);//4
 
-		if(leftRes instanceof IBooleanResult && rightRes instanceof IBooleanResult) {
+		leftRes = toBooleanResult(leftRes);
+		rightRes = toBooleanResult(rightRes);
+
+		if(leftRes instanceof IBooleanResult) {
 			IBooleanResult leftBoolean = (IBooleanResult) leftRes;
-			IBooleanResult rightBoolean = (IBooleanResult) rightRes;
-
-			qres.push(new BooleanResult(leftBoolean.getValue().booleanValue() && rightBoolean.getValue().booleanValue()));
-
-			//TODO można dorobić pornównanie z pojedyńczą wartością liczbową (1-true, 0-false)
-		} else {
-			throw new IllegalStateException("Invlaid results types, left = ["+leftRes.getClass() +"] right = ["+rightRes.getClass() + "]");
+			if(!leftBoolean.getValue().booleanValue()) {
+				qres.push(new BooleanResult(false));
+			} else {
+				if(rightRes instanceof IBooleanResult) {
+					IBooleanResult rightBoolean = (IBooleanResult) rightRes;
+					qres.push(new BooleanResult(leftBoolean.getValue().booleanValue() && rightBoolean.getValue().booleanValue()));
+				} else {
+					throw new IllegalStateException("Invlaid results types, left = ["+leftRes.getClass() +"] right = ["+rightRes.getClass() + "]");
+				}
+			}
 		}
 	}
 
@@ -227,21 +230,24 @@ public class Interpreter implements IInterpreter {
 		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();				//2,3
 
 		for (ISingleResult element : toIterable(left)) {					//4
-			envs.nested(element, store);										//4.1, 4.2
+			envs.push(envs.nested(element, store));										//4.1, 4.2
+			try {
+				IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
 
-			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
-
-			IAbstractQueryResult single = toSingleResult(rightRes);
-			if(single instanceof IBooleanResult) {
-				IBooleanResult booleanResult = (IBooleanResult) single;
-				if(booleanResult.getValue().booleanValue()) {
-					qres.push(new BooleanResult(true));
-					return;	//FIXME brzydal										//4.6
+				IAbstractQueryResult single = toSingleResult(rightRes);
+				single = deRefrence(single, store);
+				if(single instanceof IBooleanResult) {
+					IBooleanResult booleanResult = (IBooleanResult) single;
+					if(booleanResult.getValue().booleanValue()) {
+						qres.push(new BooleanResult(true));
+						return;	//FIXME brzydal										//4.6
+					}
+				} else {
+					throw new IllegalStateException("Result must be boolean");		////4.5
 				}
-			} else {
-				throw new IllegalStateException("Result must be boolean");		////4.5
+			} finally {
+				envs.pop();
 			}
-			envs.pop();
 		}
 
 		qres.push(new BooleanResult(false));
@@ -262,22 +268,23 @@ public class Interpreter implements IInterpreter {
 		while(tmpIt.hasNext()) {
 			IAbstractQueryResult element = tmpIt.next();
 			element = deRefrence(element, store);
-			envs.nested(element, store);
+			envs.push(envs.nested(element, store));
+			try {
+				expr.getRightExpression().accept(this);
+				IAbstractQueryResult right = qres.pop();
 
-			expr.getRightExpression().accept(this);
-			IAbstractQueryResult right = qres.pop();
+				Iterable<ISingleResult> rightBag = toIterable(right);
+				Iterables.addAll(visitResult.getElements(), rightBag);
 
-			Iterable<ISingleResult> rightBag = toIterable(right);
-			Iterables.addAll(visitResult.getElements(), rightBag);
-
-			for(ISingleResult singleResult : rightBag) {
-				tmpIt.add(singleResult);
+				for(ISingleResult singleResult : rightBag) {
+					tmpIt.add(singleResult);
+				}
+			} finally {
+				envs.pop();
 			}
-
-			envs.pop();
 		}
 
-		qres.push(visitResult);
+		qres.push(tryRemoveBag(visitResult));
 	}
 
 	/**
@@ -298,7 +305,8 @@ public class Interpreter implements IInterpreter {
 		IAbstractQueryResult left = executor.get(0);
 		IAbstractQueryResult right = executor.get(1);
 
-		qres.push(new CartesianProduct(left, right).getResult());
+		IBagResult bag = new CartesianProduct(left, right).getResult();
+		qres.push(tryRemoveBag(bag));
 	}
 
 	/**
@@ -349,13 +357,17 @@ public class Interpreter implements IInterpreter {
 
 		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();		//2,3
 		for (ISingleResult element : toIterable(left)) {			//4
-			envs.nested(element, store);								//4.1, 4.2
-			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
-			dotRes.add(rightRes);										//4.5
-			envs.pop();
+			envs.push(envs.nested(element, store));								//4.1, 4.2
+			try {
+				IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
+//				rightRes = deRefrence(rightRes, store);
+				dotRes.add(rightRes);										//4.5
+			} finally {
+				envs.pop();
+			}
 		}
-		
-		qres.push(dotRes);												//5
+
+		qres.push(tryRemoveBag(dotRes));					//5
 	}
 
 	/**
@@ -473,7 +485,8 @@ public class Interpreter implements IInterpreter {
 			}
 		}
 
-		qres.push(result);							//5
+//		qres.push(tryRemoveBag(result));							//5
+		qres.push(new BooleanResult(!result.getElements().isEmpty()));
 	}
 
 	/**
@@ -533,15 +546,18 @@ public class Interpreter implements IInterpreter {
 
 		IAbstractQueryResult left = new ExpressionExecutor(expr.getLeftExpression()).getFirst();		//2,3
 		for (ISingleResult element : toIterable(left)) {						//4
-			envs.nested(element, store); 										//4.1, 4.2
-
-			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
-			IBagResult cartesian = new CartesianProduct(element, rightRes).getResult();	//4.5
-			dotRes.add(cartesian);										//4.6
-			envs.pop();
+			envs.push(envs.nested(element, store)); 										//4.1, 4.2
+			try {
+				IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();	//4.3, 4.4
+				rightRes = deRefrence(rightRes, store);	//??
+				IBagResult cartesian = new CartesianProduct(element, rightRes).getResult();	//4.5
+				dotRes.add(tryRemoveBag(cartesian));										//4.6
+			} finally {
+				envs.pop();
+			}
 		}
 
-		qres.push(dotRes);												//5
+		qres.push(tryRemoveBag(dotRes));												//5
 	}
 
 	/**
@@ -686,7 +702,13 @@ public class Interpreter implements IInterpreter {
 			}
 		}
 
-		qres.push(result);							//5
+		//5
+		IAbstractQueryResult struct = tryRemoveBag(result);
+		if(struct instanceof IStructResult) {
+			qres.push(struct);
+		} else {
+			qres.push(result);
+		}
 	}
 
 	/**
@@ -788,10 +810,18 @@ public class Interpreter implements IInterpreter {
 		right = toSingleResult(right);
 		right = deRefrence(right, store);
 
-		if(left instanceof IBooleanResult && right instanceof IBooleanResult) {
-			qres.push(new BooleanResult(((IBooleanResult) left).getValue().booleanValue() || ((IBooleanResult) right).getValue().booleanValue()));
-		} else {
-			throw new IllegalStateException("Or expression can not be applied to: " + left.getClass() + " and " + right.getClass());
+		if(left instanceof IBooleanResult) {
+			IBooleanResult leftBoolean = (IBooleanResult) left;
+			if(leftBoolean.getValue()) {
+				qres.push(new BooleanResult(true));
+			} else {
+				if(right instanceof IBooleanResult) {
+					IBooleanResult rightBoolean = (IBooleanResult) right;
+					qres.push(new BooleanResult(leftBoolean.getValue() || rightBoolean.getValue()));
+				} else {
+					throw new IllegalStateException("Or expression can not be applied to: " + left.getClass() + " and " + right.getClass());
+				}
+			}
 		}
 	}
 
@@ -815,12 +845,32 @@ public class Interpreter implements IInterpreter {
 		IAbstractQueryResult right = qres.pop();
 		IAbstractQueryResult left = qres.pop();
 
-		qres.push(new NumberCalculator(store, left, right) {
-			@Override
-			protected double calculate(double firstNumber, double secondNumber) {
-				return firstNumber + secondNumber;
+		left = deRefrence(left, store);
+		right = deRefrence(right, store);
+
+		if(!(left instanceof ISimpleResult)) {
+			throw new IllegalStateException("Can not add [" + left + "]");
+		}
+		if(!(right instanceof  ISimpleResult)) {
+			throw new IllegalStateException("Can not add [" + right + "]");
+		}
+
+		ISimpleResult<?> singleLeft = (ISimpleResult) left;
+		ISimpleResult<?> singleRight = (ISimpleResult) right;
+
+		if(singleLeft instanceof IIntegerResult || singleLeft instanceof IDoubleResult) {
+			if(singleRight instanceof IIntegerResult || singleRight instanceof IDoubleResult) {
+				qres.push(new NumberCalculator(store, singleLeft, singleRight) {
+					@Override
+					protected double calculate(double firstNumber, double secondNumber) {
+						return firstNumber + secondNumber;
+					}
+				}.calculate());
+				return;
 			}
-		}.calculate());
+		}
+
+		qres.push(new StringResult(singleLeft.getValue().toString() + singleRight.getValue().toString()));
 	}
 
 	/**
@@ -845,7 +895,7 @@ public class Interpreter implements IInterpreter {
 		Iterables.addAll(result.getElements(), toIterable(left));	//4
 		Iterables.addAll(result.getElements(), toIterable(right));	//4
 
-		qres.push(result);							//5
+		qres.push(tryRemoveBag(result));							//5
 	}
 
 	/**
@@ -870,21 +920,23 @@ public class Interpreter implements IInterpreter {
 
 		BagResult whereRes = new BagResult();
 		for (ISingleResult element : toIterable(left)) {
-			envs.nested(element, store);
-
-			IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();
-			rightRes = toSingleResult(rightRes);
-			rightRes = deRefrence(rightRes, store);
-			if(rightRes instanceof IBooleanResult) {
-				boolean val = ((IBooleanResult)rightRes).getValue();
-				if(val) {
-					whereRes.add(element);
+			envs.push(envs.nested(element, store));
+			try {
+				IAbstractQueryResult rightRes = new ExpressionExecutor(expr.getRightExpression()).getFirst();
+				rightRes = toSingleResult(rightRes);
+				rightRes = deRefrence(rightRes, store);
+				if(rightRes instanceof IBooleanResult) {
+					boolean val = ((IBooleanResult)rightRes).getValue();
+					if(val) {
+						whereRes.add(element);
+					}
 				}
+			} finally {
+				envs.pop();
 			}
-			envs.pop();
 		}
 		
-		qres.push(whereRes);		
+		qres.push(whereRes);
 	}
 
 	/**
@@ -940,7 +992,7 @@ public class Interpreter implements IInterpreter {
 	@Override	//DONE
 	public void visitNameTerminal(INameTerminal expr) {
 		IBagResult bind = envs.bind(expr.getName());
-		qres.push(bind);
+		qres.push(tryRemoveBag(bind));
 	}
 
 	@Override	//DONE
@@ -963,9 +1015,14 @@ public class Interpreter implements IInterpreter {
 		IBagResult result = new BagResult();
 
 		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();
-		Iterables.addAll(result.getElements(), toIterable(res));
+		if(res instanceof IStructResult) {
+			IStructResult struct = (IStructResult) res;
+			Iterables.addAll(result.getElements(), struct.elements());
+		} else {
+			Iterables.addAll(result.getElements(), toIterable(res));
+		}
 
-		qres.push(result);
+		qres.push(tryRemoveBag(result));
 	}
 
 	/**
@@ -1079,10 +1136,14 @@ public class Interpreter implements IInterpreter {
 
 		IAbstractQueryResult res = new ExpressionExecutor(expr.getInnerExpression()).getFirst();			//2,3
 
-		//jeden pies czy dodam do bag'a czy do sekwencji. skoro na koniec i tak londuje w bagu...
-		Iterables.addAll(result.getElements(), toIterable(res));	//4
-
-		qres.push(result);
+		if(res instanceof IStructResult) {
+			result.getElements().add((IStructResult)res);
+		} else {
+			StructResult structResult = new StructResult();
+			Iterables.addAll(structResult.elements(), toIterable(res));	//4
+			result.getElements().add(structResult);
+		}
+		qres.push(tryRemoveBag(result));
 	}
 
 	/**
@@ -1124,15 +1185,18 @@ public class Interpreter implements IInterpreter {
 
 		res = deRefrence(res, store);
 
-		Set<ISingleResult> set = Sets.newHashSet();
-		for(ISingleResult element : toIterable(res)) {
-			set.add(element);
+//		Set<ISingleResult> set = Sets.newLinkedHashSet();
+		List<ISingleResult> list = Lists.newArrayList();
+		for(ISingleResult element : toIterable(res, true)) {
+			if(!list.contains(element)) {
+				list.add(element);
+			}
 		}
 
-		for(ISingleResult element : set) {
+		for(ISingleResult element : list) {
 			result.getElements().add(element);
 		}
-		qres.push(result);							//5
+		qres.push(tryRemoveBag(result));							//5
 	}
 
 	@Override	//DONE
@@ -1154,6 +1218,14 @@ public class Interpreter implements IInterpreter {
 				return sum/count;
 			}
 		}.aggregate());
+	}
+
+	private static final IAbstractQueryResult tryRemoveBag(IBagResult bagResult) {
+		if(bagResult.getElements().size() == 1) {
+			return bagResult.getElements().iterator().next();
+		} else {
+			return bagResult;
+		}
 	}
 
 	@Override	//DONE

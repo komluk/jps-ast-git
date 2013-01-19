@@ -10,29 +10,24 @@ import edu.pjwstk.jps.interpreter.qres.IQResStack;
 
 import java.util.Arrays;
 
-final class InterpreterUtils {
+public final class InterpreterUtils {
 	private InterpreterUtils() {}
 	
 	public static IAbstractQueryResult toSingleResult(IAbstractQueryResult queryResult) {
+		return  toSingleResult(queryResult, IAbstractQueryResult.class);
+	}
+
+	public static <T extends IAbstractQueryResult> T toSingleResult(IAbstractQueryResult queryResult, Class<T> clazz) {
 		if(queryResult instanceof IBagResult) {
 			IBagResult leftBag = (IBagResult) queryResult;
 			if(leftBag.getElements().size() == 1) {
-				return leftBag.getElements().iterator().next();
+				return (T)leftBag.getElements().iterator().next();
 			} else {
 				throw new IllegalStateException("Bag with size diffrent than 1");
 			}
 		}
 
-		if(queryResult instanceof IStructResult) {
-			IStructResult leftStruct = (IStructResult) queryResult;
-			if(leftStruct.elements().size() == 1) {
-				return leftStruct.elements().iterator().next();
-			} else {
-				throw new IllegalStateException("Struct with size diffrent than 1");
-			}
-		}
-		
-		return queryResult;
+		return (T)queryResult;
 	}
 	
 	public static IAbstractQueryResult deRefrence(IAbstractQueryResult ref, ISBAStore store) {
@@ -55,37 +50,24 @@ final class InterpreterUtils {
 			}
 		} else if(ref instanceof IBinderResult) {
 			IBinderResult binder = (IBinderResult) ref;
-			return binder.getValue();
+			return deRefrence(binder.getValue(), store);
 		}
 		
 		return ref;
 	}
-	
-//	public static IBagResult toBag(IAbstractQueryResult queryResult) {
-//		if(queryResult instanceof IBagResult) {
-//			return (IBagResult)queryResult;
-//		} else if(queryResult instanceof ISingleResult){
-//			ISingleResult singleRes = (ISingleResult) queryResult;
-//			return new BagResult(singleRes);
-//		} else if(queryResult instanceof IStructResult) {
-//			BagResult bag = new BagResult();
-//			for(ISingleResult single : ((IStructResult) queryResult).elements()) {
-//				bag.add(single);
-//			}
-//			return bag;
-//		} else {
-//			throw new IllegalStateException("Only SingleResults are supported but was: " + queryResult.getClass());
-//		}
-//	}
 
 	public static Iterable<ISingleResult> toIterable(IAbstractQueryResult queryResult) {
+		return toIterable(queryResult, false);
+	}
+
+	public static Iterable<ISingleResult> toIterable(IAbstractQueryResult queryResult, boolean iterateStruct) {
 		if(queryResult instanceof IBagResult) {
 			if(((IBagResult) queryResult).getElements().size() == 1) {
 				return toIterable(((IBagResult) queryResult).getElements().iterator().next());
 			} else {
 				return ((IBagResult)queryResult).getElements();
 			}
-		} else if(queryResult instanceof IStructResult) {
+		} else if(iterateStruct && queryResult instanceof IStructResult) {
 			return ((IStructResult) queryResult).elements();
 		} else if(queryResult instanceof ISingleResult){
 			ISingleResult singleRes = (ISingleResult) queryResult;
@@ -112,69 +94,56 @@ final class InterpreterUtils {
 		}
 	}
 
-	protected static boolean equals(IDoubleResult doubleRes, IAbstractQueryResult queryResult) {
-		if(queryResult instanceof IBooleanResult) {
-			IBooleanResult res = (IBooleanResult) queryResult;
-			return doubleRes.getValue().doubleValue() == (res.getValue() ? 1.0 : 0.0);
-		} else if(queryResult instanceof IIntegerResult) {
+	public static IBooleanResult toBooleanResult(IAbstractQueryResult leftRes) {
+		if(leftRes instanceof IBooleanResult) {
+			return (IBooleanResult) leftRes;
+		} else if(leftRes instanceof IIntegerResult) {
+			int val = ((IIntegerResult) leftRes).getValue().intValue();
+			return val > 0 ? new BooleanResult(true) : new BooleanResult(false);
+		} else {
+			throw new UnsupportedOperationException("Have no idea how to convert [" + leftRes + "] to boolean");
+		}
+	}
+
+	private static boolean equals(IDoubleResult doubleRes, IAbstractQueryResult queryResult) {
+		if(queryResult instanceof IIntegerResult) {
 			IIntegerResult res = (IIntegerResult) queryResult;
 			return (doubleRes.getValue().doubleValue()) == ((double)res.getValue());
 		} else if(queryResult instanceof DoubleResult) {
 			DoubleResult res = (DoubleResult) queryResult;
 			return doubleRes.getValue().doubleValue() == res.getValue().doubleValue();
 		} else {
-			throw new IllegalStateException("Can not compare double and " + queryResult.getClass());
-		}
-	}
-	
-	protected static boolean equals(IStringResult stringResult, IAbstractQueryResult queryResult) {
-		if(queryResult instanceof IBooleanResult) {
-			IBooleanResult res = (IBooleanResult) queryResult;
-			return stringResult.getValue().equals(res.getValue().toString());
-		} else if(queryResult instanceof IDoubleResult) {
-			IDoubleResult res = (IDoubleResult) queryResult;
-			return stringResult.getValue().equals(res.getValue().toString());
-		} else if(queryResult instanceof IIntegerResult) {
-			IIntegerResult res = (IIntegerResult) queryResult;
-			return stringResult.getValue().equals(res.getValue().toString());
-		} else if(queryResult instanceof IStringResult) {
-			IStringResult res = (IStringResult) queryResult;
-			return stringResult.getValue().equals(res.getValue());
-		} else {
-			throw new IllegalStateException("Can not compare strin and " + queryResult.getClass());
+			return false;
 		}
 	}
 
-	protected static boolean equlas(IIntegerResult intRes, IAbstractQueryResult queryResult) {
+	private static boolean equals(IStringResult stringResult, IAbstractQueryResult queryResult) {
+		if(queryResult instanceof IStringResult) {
+			IStringResult res = (IStringResult) queryResult;
+			return stringResult.getValue().equals(res.getValue());
+		} else {
+			return false;
+		}
+	}
+
+	private static boolean equlas(IIntegerResult intRes, IAbstractQueryResult queryResult) {
 		if(queryResult instanceof DoubleResult) {
 			IDoubleResult res = (IDoubleResult) queryResult;
 			return intRes.getValue().intValue() == res.getValue().doubleValue();
-		} else if(queryResult instanceof IBooleanResult) {
-			IBooleanResult res = (IBooleanResult) queryResult;
-			return intRes.getValue().intValue() == (res.getValue() ? 1 : 0);
 		} else if(queryResult instanceof IIntegerResult) {
 			IIntegerResult res = (IIntegerResult) queryResult;
 			return intRes.getValue().intValue() == res.getValue().intValue();
 		} else {
-			throw new IllegalStateException("can not compare int and " + queryResult.getClass());
+			return false;
 		}
 	}
 
-	protected static boolean equlas(IBooleanResult booleanResult, IAbstractQueryResult queryResult) {
-		if(queryResult instanceof DoubleResult) {
-			IDoubleResult res = (IDoubleResult) queryResult;
-			return (booleanResult.getValue() ? 1.0 : 0.0) == res.getValue().doubleValue();
-		} else if(queryResult instanceof IBooleanResult) {
+	private static boolean equlas(IBooleanResult booleanResult, IAbstractQueryResult queryResult) {
+		if(queryResult instanceof IBooleanResult) {
 			IBooleanResult res = (IBooleanResult) queryResult;
 			return booleanResult.getValue().booleanValue() == res.getValue().booleanValue();
-		} else if(queryResult instanceof IIntegerResult) {
-			IIntegerResult res = (IIntegerResult) queryResult;
-			return (booleanResult.getValue() ? 1 : 0) == res.getValue().intValue();
-		} else if(queryResult instanceof IStringResult) {
-			IStringResult res = (IStringResult) queryResult;
-			return booleanResult.getValue().toString().equals(res.getValue());
 		} else {
-			throw new IllegalStateException("can not compare boolean and " + queryResult.getClass());
+			return false;
 		}
 	}
 	
@@ -185,22 +154,22 @@ final class InterpreterUtils {
 		IAbstractQueryResult right = qres.pop();
 		IAbstractQueryResult left = qres.pop();
 		
-		left = InterpreterUtils.toSingleResult(left);
-		left = InterpreterUtils.deRefrence(left, store);
+		left = toSingleResult(left);
+		left = deRefrence(left, store);
 		
-		right = InterpreterUtils.toSingleResult(right);
-		right = InterpreterUtils.deRefrence(right, store);
+		right = toSingleResult(right);
+		right = deRefrence(right, store);
 		
 		if(left instanceof DoubleResult) {
 			return InterpreterUtils.equals((DoubleResult)left, right);
 		} else if(left instanceof IStringResult) {
-			return InterpreterUtils.equals((IDoubleResult) left, right);
+			return InterpreterUtils.equals((IStringResult) left, right);
 		} else if(left instanceof IIntegerResult) {
 			return InterpreterUtils.equlas((IIntegerResult)left, right);
 		} else if(left instanceof IBooleanResult) {
 			return InterpreterUtils.equlas((IBooleanResult)left, right);
 		} else {
-			throw new IllegalStateException("Unssuported types for equals expression");
+			throw new IllegalStateException("Unsupported types for equals expression: [" + left + "] and [" + right + "]");
 		}
 	}
 }

@@ -1,7 +1,11 @@
 package pl.edu.pjwstk.jps.parser;
 
+import java_cup.runtime.*;
+import java.io.IOException;
+
 import java_cup.runtime.Symbol;
 import static pl.edu.pjwstk.jps.parser.Symbols.*;
+import pl.edu.pjwstk.jps.parser.Symbols;
 
 %%
 %{
@@ -9,6 +13,7 @@ import static pl.edu.pjwstk.jps.parser.Symbols.*;
 		return new Symbol(id, yyline, yycolumn);
 	}
 	private Symbol createToken(int id, Object o) {
+		//System.out.println(id + " | " + o.toString());
 		return new Symbol(id, yyline, yycolumn, o);
 	}
 %}
@@ -26,9 +31,8 @@ import static pl.edu.pjwstk.jps.parser.Symbols.*;
 INTEGER = [0-9]+
 BOOLEAN = true|false
 IDENTIFIER = [_a-zA-Z][0-9a-zA-Z]*
-DOUBLE = [0-9]+\.[0-9]+
 STRING = [\"][^\"]*[\"]
-CHAR = [\'][^\"][\']
+DOUBLE = [0-9]+\.[0-9]+
 LineTerminator = \r|\n|\r\n
 WHITESPACE = {LineTerminator} | [ \t]
 %%
@@ -40,19 +44,12 @@ WHITESPACE = {LineTerminator} | [ \t]
 	"/"						{ return createToken(DIVIDE); }
 	"%"                     { return createToken(MODULO); }
 
-	"not"                   { return createToken(NOT); }
-	"!"                     { return createToken(NOT); }
-	"and"                   { return createToken(AND); }
-	"&&"                    { return createToken(AND); }
-	"&"                     { return createToken(AND); }
-	"or"                    { return createToken(OR); }
-	"||"                    { return createToken(OR); }
-	"|"                     { return createToken(OR); }
+	"not"|"NOT"|"!"         { return createToken(NOT); }
+	"and"|"AND"|"&"|"&&"    { return createToken(AND); }
+	"or"|"OR"|"\|\|"|"\|"      { return createToken(OR); }
 	"xor"                   { return createToken(XOR); }
 
-	"eq"                    { return createToken(EQ); }
-	"="                     { return createToken(EQ); }
-	"=="                    { return createToken(EQ); }
+	"eq"|"EQ"|"="|"=="      { return createToken(EQ); }
 
 	"<"                     { return createToken(LESS_THAN); }
 	"<="                    { return createToken(LESS_EQ_THAN); }
@@ -60,19 +57,39 @@ WHITESPACE = {LineTerminator} | [ \t]
 	">="                    { return createToken(MORE_EQ_THAN); }
 
 	","                     { return createToken(COMMA); }
-	"sum"                   { return createToken(SUM); }
-	"count"                 { return createToken(COUNT); }
-	"avg"                   { return createToken(AVG); }
-	"min"                   { return createToken(MIN); }
-	"max"                   { return createToken(MAX); }
+	"sum"|"SUM"             { return createToken(SUM); }
+	"count"|"COUNT"         { return createToken(COUNT); }
+	"avg"|"AVG"             { return createToken(AVG); }
+	"min"|"MIN"             { return createToken(MIN); }
+	"max"|"MAX"             { return createToken(MAX); }
+	"unique"|"UNIQUE"       { return createToken(UNIQUE); }
+	"exists"|"EXISTS"       { return createToken(EXISTS); }
+	"minus"|"MINUS"         { return createToken(MINUS_SET); }
+	"intersect"|"INTERSECT" { return createToken(INTERSECT); }
 
+	"."                     { return createToken(DOT); }
+
+	"as"|"AS"				{ return createToken(AS); }
+	"groupas"|"GROUPAS"|"group as"|"GROUP AS"   { return createToken(GROUP_AS); }
+
+	"union"|"UNION"         { return createToken(UNION); }
+	"in"|"IN"         { return createToken(IN); }
+	"any"|"ANY"         { return createToken(FOR_ANY); }
+	"all"|"ALL"         { return createToken(FOR_ALL); }
+	"where"|"WHERE"         { return createToken(WHERE); }
+	"join"|"JOIN"         { return createToken(JOIN); }
+
+	"bag"|"BAG"             { return createToken(BAG); }
+	"STRUCT"|"struct"       { return createToken(STRUCT); }
 	"!="                    { return createToken(NOT_EQ); }
 
 	"("						{ return createToken(LEFT_ROUND_BRACKET); }
 	")"						{ return createToken(RIGHT_ROUND_BRACKET); }
 
 
-	{WHITESPACE} { }
+
+   {WHITESPACE} { }
+   {STRING} {return createToken(STRING_LITERAL, yytext().substring(1,yytext().length()-1)) ; }
 	{INTEGER} {
 		int val;
 		try {
@@ -103,10 +120,7 @@ WHITESPACE = {LineTerminator} | [ \t]
 		}
 		return createToken(BOOLEAN_LITERAL, new Boolean(val));
 	}
-﻿   {IDENTIFIER} {
-	    return createToken(IDENTIFIER, yytext());
-﻿   }
-﻿  {STRING} {
-		return createToken(STRING_LITERAL, yytext().substring(1,yytext().length()-1));
+	{IDENTIFIER} {
+		return createToken(IDENTIFIER, yytext());
 	}
 }

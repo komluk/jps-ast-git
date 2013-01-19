@@ -16,4 +16,10 @@ abstract class AbstractUnaryExpression extends AbstractExpression implements IUn
 		return innerExpression;
 	}
 
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" +
+				"innerExpression=" + innerExpression +
+				'}';
+	}
 }

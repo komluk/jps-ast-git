@@ -18,16 +18,19 @@ public class SBAStorePrinter {
 	private final Map<OID, TmpObject> processed = Maps.newHashMap();
 	private final TmpObject root = new TmpObject();
 	private final SBAStore db;
-	
+
 	public SBAStorePrinter(SBAStore db) {
+		this(db, (IComplexObject)db.retrieve(db.getEntryOID()));
+	}
+
+	public SBAStorePrinter(SBAStore db, IComplexObject rootObject) {
 		this.db = db;
 		
-		root.setOid(db.getEntryOID().toString());
-		root.setName(db.retrieve(db.getEntryOID()).getName());
-		processed.put(db.getEntryOID(), root);
-		
-		IComplexObject rootSBAObject = (IComplexObject) db.retrieve(db.getEntryOID());
-		for(OID oid : rootSBAObject.getChildOIDs()) {
+		root.setOid(rootObject.getOID().toString());
+		root.setName(db.retrieve(rootObject.getOID()).getName());
+		processed.put(rootObject.getOID(), root);
+
+		for(OID oid : rootObject.getChildOIDs()) {
 			process(root, db.retrieve(oid));
 		}
 	}

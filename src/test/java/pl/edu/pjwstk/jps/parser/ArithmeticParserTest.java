@@ -50,4 +50,11 @@ public class ArithmeticParserTest extends ParserTest {
 		IntegerResult res = getResult(expression, IntegerResult.class);
 		assertEquals(res.getValue(), Integer.valueOf(1));
 	}
+
+	@Test(enabled = false)
+	public void negativeNumberExpressionTest() throws Exception {
+		AbstractExpression expression = getExpression("5*-2");
+		IntegerResult res = getResult(expression, IntegerResult.class);
+		assertEquals(res.getValue(), Integer.valueOf(-10));
+	}
 }
