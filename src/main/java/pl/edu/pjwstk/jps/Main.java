@@ -31,12 +31,14 @@ public class Main {
 		new JCommander(parsed, args);
 		SBAStore.getInstance();
 
-		for(File file : parsed.files) {
-			if(file.exists() && file.isFile()) {
-				SBAStore.getInstance().loadXML(file.getAbsolutePath());
-				System.out.println(file.getAbsolutePath() + " loaded");
-			} else {
-				throw new NoSuchFileException(file.getAbsolutePath());
+		if(parsed.files != null) {
+			for(File file : parsed.files) {
+				if(file.exists() && file.isFile()) {
+					SBAStore.getInstance().loadXML(file.getAbsolutePath());
+					System.out.println(file.getAbsolutePath() + " loaded");
+				} else {
+					throw new NoSuchFileException(file.getAbsolutePath());
+				}
 			}
 		}
 
