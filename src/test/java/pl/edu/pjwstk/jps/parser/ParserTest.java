@@ -18,6 +18,7 @@ abstract class ParserTest {
 
 	protected void init() {
 		interpreter = new Interpreter(SBAStore.getInstance());
+		interpreter.getEnvs().init(SBAStore.getInstance().getEntryOID(), SBAStore.getInstance());
 	}
 
 	protected  <T extends AbstractQueryResult> T getResult(AbstractExpression expression, Class<T> expectedClass) {

@@ -1,5 +1,6 @@
 package pl.edu.pjwstk.jps.result;
 
+import pl.edu.pjwstk.jps.ast.auxname.AsExpression;
 import pl.edu.pjwstk.jps.qres.interpreter.QResStack;
 import pl.edu.pjwstk.jps.result.util.CartesianProduct;
 import edu.pjwstk.jps.result.IAbstractQueryResult;
@@ -31,8 +32,8 @@ public class QResMain {
 				new IntegerResult(1),
 				new DoubleResult(2.1)));
 		
-		qres.push(new IntegerResult(1));
-		qres.push(new IntegerResult(2));
+		qres.push(new IntegerResult(3));
+		qres.push(new IntegerResult(4));
 		
 		IntegerResult right = (IntegerResult) qres.pop();
 		IntegerResult left = (IntegerResult) qres.pop();
@@ -50,7 +51,12 @@ public class QResMain {
 		
 		qres.push(new CartesianProduct(leftBag, rightBag).getResult());
 		IBagResult res = (IBagResult) qres.pop();
-		qres.push(new BinderResult("nazwa", res));
+
+		BagResult totalRes = new BagResult();
+		for(ISingleResult single : res.getElements()) {
+			totalRes.add(new BinderResult("nazwa", single));
+		}
+		qres.push(totalRes);
 		
 		System.out.println("(bag(1, 2.1), bag(3+4, \"test\")) as nazwa = " + qres.pop());
 	}

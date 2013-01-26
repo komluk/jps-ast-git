@@ -88,8 +88,8 @@ WHITESPACE = {LineTerminator} | [ \t]
 
 
 
-   {WHITESPACE} { }
-   {STRING} {return createToken(STRING_LITERAL, yytext().substring(1,yytext().length()-1)) ; }
+    {WHITESPACE} { }
+   	{STRING} {return createToken(STRING_LITERAL, yytext().substring(1,yytext().length()-1)) ; }
 	{INTEGER} {
 		int val;
 		try {

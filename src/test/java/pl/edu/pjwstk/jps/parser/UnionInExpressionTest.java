@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import edu.pjwstk.jps.result.ISingleResult;
 import org.testng.annotations.BeforeMethod;
 import pl.edu.pjwstk.jps.ast.AbstractExpression;
+import pl.edu.pjwstk.jps.ast.datastore.SBAStore;
 import pl.edu.pjwstk.jps.result.BagResult;
 import pl.edu.pjwstk.jps.result.BooleanResult;
 import pl.edu.pjwstk.jps.result.IntegerResult;
@@ -22,6 +23,9 @@ public class UnionInExpressionTest extends ParserTest {
 	@BeforeMethod
 	public void beforeMethod() {
 		init();
+		String path = UnionInExpressionTest.class.getResource("/envs.xml").getPath();
+		SBAStore.getInstance().loadXML(path);
+		interpreter.getEnvs().init(SBAStore.getInstance().getEntryOID(), SBAStore.getInstance());
 	}
 
 	public void testUnionExpression() throws Exception {
@@ -37,6 +41,13 @@ public class UnionInExpressionTest extends ParserTest {
 
 	public void testInExpression() throws Exception {
 		AbstractExpression expression = getExpression("bag(1,2,3) in bag(1,2)");
+		BooleanResult res = getResult(expression, BooleanResult.class);
+		assertTrue(res.getValue());
+	}
+
+
+	public void testInExpression2() throws Exception {
+		AbstractExpression expression = getExpression("emp.fName in bag(\"Anna\", \"Maciej\")");
 		BooleanResult res = getResult(expression, BooleanResult.class);
 		assertTrue(res.getValue());
 	}

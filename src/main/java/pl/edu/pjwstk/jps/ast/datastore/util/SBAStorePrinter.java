@@ -36,6 +36,9 @@ public class SBAStorePrinter {
 	}
 	
 	private void process(TmpObject parent, ISBAObject object) {
+		if(object == null) {
+			return;
+		}
 		if(!processed.containsKey(object.getOID())) {
 			TmpObject o = new TmpObject();
 			o.setOid(object.getOID().toString());

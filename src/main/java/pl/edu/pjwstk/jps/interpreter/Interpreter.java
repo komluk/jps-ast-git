@@ -12,6 +12,7 @@ import edu.pjwstk.jps.ast.unary.*;
 import edu.pjwstk.jps.datastore.ISBAStore;
 import edu.pjwstk.jps.interpreter.envs.IInterpreter;
 import edu.pjwstk.jps.result.*;
+import pl.edu.pjwstk.jps.ast.binary.EqualsExpression;
 import pl.edu.pjwstk.jps.ast.binary.MoreOrEqualThanExpression;
 import pl.edu.pjwstk.jps.ast.binary.MoreThanExpression;
 import pl.edu.pjwstk.jps.interpreter.envs.ENVS;
@@ -32,7 +33,19 @@ public class Interpreter implements IInterpreter {
 	private final QResStack qres;
 	private final ENVS envs;
 	private final ISBAStore store;
-	
+
+	public QResStack getQres() {
+		return qres;
+	}
+
+	public ENVS getEnvs() {
+		return envs;
+	}
+
+	public ISBAStore getStore() {
+		return store;
+	}
+
 	public Interpreter(ISBAStore store) {
 		this(store, new QResStack(), new ENVS());
 
@@ -478,7 +491,9 @@ public class Interpreter implements IInterpreter {
 
 		for(ISingleResult res : toIterable(left)) {
 			for(ISingleResult inRes : toIterable(right)) {
-				if(res.equals(inRes)) {
+				IAbstractQueryResult first = deRefrence(res, store);
+				IAbstractQueryResult second = deRefrence(inRes, store);
+				if(first.equals(second)) {
 					result.getElements().add(res);
 					break;
 				}

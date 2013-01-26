@@ -49,9 +49,11 @@ public class ENVS implements IENVS {
 		IComplexObject complexObject = (IComplexObject)store.retrieve(rootOid);
 		for(OID childOid : complexObject.getChildOIDs()) {
 			ISBAObject object = store.retrieve(childOid);
-			IAbstractQueryResult result = new ReferenceResult(object.getOID());
-			ENVSBinder binder = new ENVSBinder(object.getName(), result);
-			frame.add(binder);
+			if(object != null) {
+				IAbstractQueryResult result = new ReferenceResult(object.getOID());
+				ENVSBinder binder = new ENVSBinder(object.getName(), result);
+				frame.add(binder);
+			}
 		}
 		
 		push(frame);
